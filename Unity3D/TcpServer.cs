@@ -7,8 +7,10 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using UnityEngine;
+using System.Threading.Tasks;
+using Poco.Utils;
 
-namespace TcpServer
+namespace Poco.TcpServer
 {
     public interface ProtoFilter
     {
@@ -41,6 +43,7 @@ namespace TcpServer
                 int data_size = BitConverter.ToInt32(buf, 0);
                 if (buf.Length >= data_size + HEADER_SIZE)
                 {
+                    
                     byte[] data_body = Slice(buf, HEADER_SIZE, data_size + HEADER_SIZE);
                     string content = System.Text.Encoding.Default.GetString(data_body);
                     msgs.Add(content);
@@ -62,6 +65,8 @@ namespace TcpServer
 
         public byte[] pack(String content)
         {
+            LogUtil.ULogDev("Pack Msg");
+
             int len = content.Length;
             byte[] size = BitConverter.GetBytes(len);
             if (!BitConverter.IsLittleEndian)
@@ -418,8 +423,9 @@ namespace TcpServer
         /// <param name="datagram">报文</param>
         public void Send(TcpClient tcpClient, byte[] datagram)
         {
-            GuardRunning();
+            LogUtil.ULogDev("Send Method");
 
+            GuardRunning();
             if (tcpClient == null)
                 throw new ArgumentNullException("tcpClient");
 
@@ -429,15 +435,85 @@ namespace TcpServer
             try
             {
                 NetworkStream stream = tcpClient.GetStream();
+                
                 if (stream.CanWrite)
                 {
-                    stream.BeginWrite(datagram, 0, datagram.Length, HandleDatagramWritten, tcpClient);
+                    LogUtil.ULogDev("DataSize to Send:  " + ((float)datagram.Length /1024/1024));
+                    //stream.BeginWrite(datagram, 0, datagram.Length, HandleDatagramWritten, tcpClient);
+
+
+                    Task.Factory.StartNew(
+                        () => NetworkWriteAsync(stream, datagram, 0, datagram.Length)
+                        );
+                    LogUtil.ULogDev("NetworkWriteAsync thread start");
+
+
                 }
             }
             catch (ObjectDisposedException ex)
             {
                 Debug.LogException(ex);
             }
+        }
+
+
+        public static int tmpBufSize = 2 * 1024 * 1024;
+        public static int sleepTime = 500;
+
+        private void NetworkWriteAsync(NetworkStream stream, byte[] buffer, int offset, int size)
+        {
+#if UWA_POCO_DEBUG
+            Debug.Log("NetworkWriteAsync");
+            Debug.Log("Write: BufferSize - " + buffer.Length);
+
+            using (System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create())
+            {
+                byte[] hashBytes = md5.ComputeHash(buffer);
+
+                // Convert the byte array to hexadecimal string
+                System.Text.StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < hashBytes.Length; i++)
+                {
+                    sb.Append(hashBytes[i].ToString("X2"));
+                }
+                Debug.Log(sb.ToString());
+            }
+#endif
+
+            int sentSize = 0;
+
+            int cnt = 0;
+            for (; ; )
+            {
+
+                if (size - sentSize > tmpBufSize)
+                {
+
+#if UWA_POCO_DEBUG
+                    Debug.Log(sentSize.ToString() + " / " + buffer.Length);
+#endif
+
+                    stream.Write(buffer, tmpBufSize * cnt, tmpBufSize);
+                    Thread.Sleep(sleepTime);
+                    sentSize += tmpBufSize;
+                    cnt++;
+                }
+                else
+                {
+
+#if UWA_POCO_DEBUG
+                    Debug.Log(sentSize.ToString() + " / " + buffer.Length);
+#endif
+                    stream.Write(buffer, tmpBufSize * cnt, buffer.Length - sentSize);
+                    sentSize += buffer.Length - sentSize;
+                    cnt++;
+                    break;
+                }
+
+            }
+
+
+
         }
 
         /// <summary>
