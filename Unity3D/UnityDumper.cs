@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Poco.Utils;
 
 namespace Poco
 {
@@ -8,6 +9,8 @@ namespace Poco
     {
         public override AbstractNode getRoot()
         {
+            LogUtil.ULogDev("UnityDumper.getRoot");
+
             return new RootNode();
         }
     }
@@ -18,6 +21,8 @@ namespace Poco
 
         public RootNode()
         {
+            LogUtil.ULogDev("RootNode.ctor");
+
             children = new List<AbstractNode>();
             foreach (GameObject obj in Transform.FindObjectsOfType(typeof(GameObject)))
             {
@@ -34,3 +39,5 @@ namespace Poco
         }
     }
 }
+
+

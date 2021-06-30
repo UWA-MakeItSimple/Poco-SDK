@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Threading;
 
-namespace TcpServer
+namespace Poco.TcpServer
 {
 
     /// <summary>

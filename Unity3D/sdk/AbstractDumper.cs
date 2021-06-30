@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Poco.Utils;
 
 
 namespace Poco
@@ -19,11 +20,15 @@ namespace Poco
         }
         public Dictionary<string, object> dumpHierarchy(bool onlyVisibleNode)
         {
+            LogUtil.ULogDev("AbstractDumper.dumpHierarchy");
             return dumpHierarchyImpl(getRoot(), onlyVisibleNode);
         }
 
-        private Dictionary<string, object> dumpHierarchyImpl(AbstractNode node, bool onlyVisibleNode)
+        protected virtual Dictionary<string, object> dumpHierarchyImpl(AbstractNode node, bool onlyVisibleNode)
         {
+
+            LogUtil.ULogDev("AbstractDumper.dumpHierarchyImpl");
+
             if (node == null)
             {
                 return null;

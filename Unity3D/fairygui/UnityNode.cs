@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using FairyGUI;
+using Poco.Utils;
 
 namespace Poco
 {
@@ -16,6 +17,8 @@ namespace Poco
 
         public UnityNode(GameObject obj)
         {
+            LogUtil.ULogDev("UnityNode.ctor");
+
             gameObject = obj;
             camera = Camera.main;
             foreach (var cam in Camera.allCameras)
@@ -244,5 +247,6 @@ namespace Poco
             }
             return false;
         }
+
     }
 }
