@@ -96,9 +96,7 @@ namespace Poco
         {
             //Strong protect judge
             //---------------------------------------------------------------------
-
-
-
+            
 
             if (StrongProtect(node))
             {

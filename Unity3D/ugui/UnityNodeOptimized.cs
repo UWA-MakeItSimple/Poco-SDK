@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using UnityEngine.UI;
 using UnityEngine;
-using Poco.Utils;
+
 
 namespace Poco
 {
-    public class UnityNode : AbstractNode
+    public class UnityNodeOptimized : AbstractNode
     {
         public static Dictionary<string, string> TypeNames = new Dictionary<string, string>() {
             { "Text", "Text" },
@@ -36,12 +36,13 @@ namespace Poco
         private List<string> components;
         private Camera camera;
 
+        public bool protectedByParent;
+        public string name;
 
-        public UnityNode(GameObject obj)
+        public UnityNodeOptimized(GameObject obj)
         {
-            LogUtil.ULogDev("UnityNode.ctor");
-
             gameObject = obj;
+            name = obj.name;
             camera = Camera.main;
             foreach (var cam in Camera.allCameras)
             {
@@ -68,7 +69,7 @@ namespace Poco
         public override AbstractNode getParent()
         {
             GameObject parentObj = gameObject.transform.parent.gameObject;
-            return new UnityNode(parentObj);
+            return new UnityNodeOptimized(parentObj);
         }
 
         public override List<AbstractNode> getChildren()
@@ -76,7 +77,7 @@ namespace Poco
             List<AbstractNode> children = new List<AbstractNode>();
             foreach (Transform child in gameObject.transform)
             {
-                children.Add(new UnityNode(child.gameObject));
+                children.Add(new UnityNodeOptimized(child.gameObject));
             }
             return children;
         }
@@ -512,5 +513,48 @@ namespace Poco
             }
             return false;
         }
+        public override bool IsUINode()
+        {
+
+            if (gameObject.layer == LayerMask.NameToLayer("UI"))
+            {
+                Debug.Log("LayerUI:  " + gameObject.name);
+                return true;
+            }
+
+            if(gameObject.GetComponent<RectTransform>()!=null)
+            {
+                return true;
+            }
+
+
+            return false;
+        }
+
+
+        public override bool IsUIPanel()
+        {
+            if (gameObject.GetComponent<Canvas>() != null)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
     }
+
+    static class GameObjectExtension
+    {
+        public static bool HasUIInChildren(this GameObject go)
+        {
+            Component[] comps = go.GetComponentsInChildren<Canvas>();
+            if (comps.Length > 0)
+                return true;
+            else
+                return false;
+        }
+    }
+
 }

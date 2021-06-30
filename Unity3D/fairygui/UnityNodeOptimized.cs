@@ -279,7 +279,6 @@ namespace Poco
 
             if (gameObject.layer == LayerMask.NameToLayer("UI"))
             {
-                Debug.Log("LayerUI:  " + gameObject.name);
                 return true;
             }
 

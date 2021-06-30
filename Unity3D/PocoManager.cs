@@ -174,6 +174,15 @@ namespace Poco
         [RPC]
         private object Dump(List<object> param)
         {
+            if (Config.Instance.pruningEnabled)
+            {
+                dumper = dumperOptimized;
+            }
+            else
+            {
+                dumper = dumperOriginal;
+            }
+
             if (dumper == null)
                 throw new Exception("Dumper has not been initialized");
 
