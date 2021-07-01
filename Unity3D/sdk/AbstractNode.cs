@@ -57,11 +57,11 @@ public class AbstractNode
 	}
 
 
-	public virtual bool IsUINode()
-	{
+	//public virtual bool IsUINode()
+	//{
 
-		throw new NotImplementedException();
-	}
+	//	throw new NotImplementedException();
+	//}
 
 
 	public virtual bool IsUIPanel()

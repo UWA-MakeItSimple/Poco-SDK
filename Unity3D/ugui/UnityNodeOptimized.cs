@@ -513,23 +513,23 @@ namespace Poco
             }
             return false;
         }
-        public override bool IsUINode()
-        {
+        //public override bool IsUINode()
+        //{
 
-            if (gameObject.layer == LayerMask.NameToLayer("UI"))
-            {
-                Debug.Log("LayerUI:  " + gameObject.name);
-                return true;
-            }
+        //    if (gameObject.layer == LayerMask.NameToLayer("UI"))
+        //    {
+        //        Debug.Log("LayerUI:  " + gameObject.name);
+        //        return true;
+        //    }
 
-            if(gameObject.GetComponent<RectTransform>()!=null)
-            {
-                return true;
-            }
+        //    if(gameObject.GetComponent<RectTransform>()!=null)
+        //    {
+        //        return true;
+        //    }
 
 
-            return false;
-        }
+        //    return false;
+        //}
 
 
         public override bool IsUIPanel()

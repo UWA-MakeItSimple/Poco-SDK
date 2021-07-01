@@ -266,24 +266,24 @@ namespace Poco
             return false;
         }
 
-        public override bool IsUINode()
-        {
-            if (doInfo != null)
-                return true;
+        //public override bool IsUINode()
+        //{
+        //    if (doInfo != null)
+        //        return true;
 
-            if (uipanelComp != null)
-            {
-                return true;
-            }
+        //    if (uipanelComp != null)
+        //    {
+        //        return true;
+        //    }
 
 
-            if (gameObject.layer == LayerMask.NameToLayer("UI"))
-            {
-                return true;
-            }
+        //    if (gameObject.layer == LayerMask.NameToLayer("UI"))
+        //    {
+        //        return true;
+        //    }
 
-            return false;
-        }
+        //    return false;
+        //}
 
 
         public override bool IsUIPanel()

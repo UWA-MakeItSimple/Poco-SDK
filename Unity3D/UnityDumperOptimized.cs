@@ -69,7 +69,6 @@ namespace Poco
             if (!shouldVisit)
                 return null;
 
-
             List<object> children = new List<object>();
             foreach (AbstractNode child in node.getChildren())
             {
@@ -104,13 +103,20 @@ namespace Poco
                 return true;
             }
             else
-                protectChildren = false;
+            {
+                if (((UnityNodeOptimized)node).protectedByParent)
+                    protectChildren = true;
+                else
+                    protectChildren = false;
+
+            }
 
 
             //---------------------------------------------------------------------
             //Weak protection judge
-            if(WeakProtect(node))
+            if (WeakProtect(node))
             {
+
 
                 // String black list
                 if (BlackListContain(node))
@@ -165,10 +171,10 @@ namespace Poco
                 return true;
             }
 
-            if (((UnityNodeOptimized)node).IsUINode())
-            {
-                return true;
-            }
+            //if (((UnityNodeOptimized)node).IsUINode())
+            //{
+            //    return true;
+            //}
 
             return false;
         }
@@ -176,26 +182,11 @@ namespace Poco
         private bool BlackListContain(AbstractNode node)
         {
             string name = ((UnityNodeOptimized)node).name;
-            Debug.LogError(name);
-
-            if (name.StartsWith( "btn"))
-            {
-                Debug.LogError(name);
-                foreach (var n in Config.Instance.blackList)
-                    Debug.LogError(n);
-            }
-
 
             if (Config.Instance.blackList.Contains(name))
-            {
-
-
                 return true;
-            }
             else
-            {
                 return false;
-            }
 
         }
 
