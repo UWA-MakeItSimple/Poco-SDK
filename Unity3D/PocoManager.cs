@@ -85,6 +85,8 @@ namespace Poco
 
         void Awake()
         {
+            UWASDKAgent.PushSample("PocoManager.Awake");
+
             dumper = dumperOriginal;
             LogUtil.ULogDev("PocoManager awake");
             Debug.Log("PocoManager awake");
@@ -143,6 +145,7 @@ namespace Poco
             }
 
             vr_support.ClearCommands();
+            UWASDKAgent.PopSample();
         }
 
         static void server_ClientConnected(object sender, TcpClientConnectedEventArgs e)
@@ -174,6 +177,9 @@ namespace Poco
         [RPC]
         private object Dump(List<object> param)
         {
+
+            UWASDKAgent.PushSample("PocoManager.Dump");
+
             if (Config.Instance.pruningEnabled)
             {
                 dumper = dumperOptimized;
@@ -211,6 +217,8 @@ namespace Poco
             debugProfilingData["dump"] = sw.ElapsedMilliseconds;
 
             LogUtil.ULogDev("Dump Method executed");
+
+            UWASDKAgent.PopSample();
             return h;
         }
 
@@ -370,6 +378,7 @@ namespace Poco
 
         void Update()
         {
+            UWASDKAgent.PushSample("PocoManager.Update");
             foreach (TcpClientState client in inbox.Values)
             {
                 List<string> msgs = client.Prot.swap_msgs();
@@ -380,6 +389,7 @@ namespace Poco
                     sw.Start();
                     var t0 = sw.ElapsedMilliseconds;
                     string response = rpc.HandleMessage(msg);
+
                     var t1 = sw.ElapsedMilliseconds;
 
                     byte[] bytes = prot.pack(response);
@@ -398,6 +408,8 @@ namespace Poco
             }
 
             vr_support.PeekCommand();
+            UWASDKAgent.PopSample();
+
         }
 
         //private void OnGUI()
@@ -452,6 +464,8 @@ namespace Poco
 
         public string HandleMessage(string json)
         {
+            UWASDKAgent.PushSample("PocoManager.HandleMessage");
+
             Dictionary<string, object> data = JsonConvert.DeserializeObject<Dictionary<string, object>>(json, settings);
             if (data.ContainsKey("method"))
             {
@@ -493,7 +507,7 @@ namespace Poco
                 else
                     LogUtil.ULogDev("Response: larger than 10240 chars");
 
-
+                UWASDKAgent.PopSample();
                 return response;
 
             }

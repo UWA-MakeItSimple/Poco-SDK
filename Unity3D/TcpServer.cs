@@ -65,6 +65,7 @@ namespace Poco.TcpServer
 
         public byte[] pack(String content)
         {
+            UWASDKAgent.PushSample("TcpServer.pack");
             LogUtil.ULogDev("Pack Msg");
 
             int len = content.Length;
@@ -76,6 +77,8 @@ namespace Poco.TcpServer
             }
             byte[] body = System.Text.Encoding.Default.GetBytes(content);
             byte[] ret = Combine(size, body);
+
+            UWASDKAgent.PopSample();
             return ret;
         }
 
@@ -423,6 +426,7 @@ namespace Poco.TcpServer
         /// <param name="datagram">报文</param>
         public void Send(TcpClient tcpClient, byte[] datagram)
         {
+            UWASDKAgent.PushSample("TcpServer.SendAsync");
             LogUtil.ULogDev("Send Method");
 
             GuardRunning();
@@ -447,10 +451,7 @@ namespace Poco.TcpServer
                         () => NetworkWriteAsync(stream, datagram, 0, datagram.Length)
                         );
 
-
-
                     LogUtil.ULogDev("NetworkWriteAsync thread start");
-
 
                 }
             }
@@ -458,6 +459,7 @@ namespace Poco.TcpServer
             {
                 Debug.LogException(ex);
             }
+            UWASDKAgent.PopSample();
         }
 
 

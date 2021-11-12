@@ -7,43 +7,55 @@ namespace Poco
 {
     public class UnityDumperOptimized : AbstractDumper
     {
-
-        //DumpHierarchy called by RootNode
-        protected override Dictionary<string, object> dumpHierarchyImpl(AbstractNode node, bool onlyVisibleNode)
+        public override Dictionary<string, object> dumpHierarchy(bool onlyVisibleNode)
         {
-            LogUtil.ULogDev("UnityDumperOptimized.dumpHierarchyImpl");
+            UWASDKAgent.PushSample("AbstractDumper.BeforeGetRoot");
+            AbstractNode abstractNode = getRoot();
+            UWASDKAgent.PopSample();
 
-            if (node == null)
-            {
-                return null;
-            }
-
-            Dictionary<string, object> payload = node.enumerateAttrs();
-            Dictionary<string, object> result = new Dictionary<string, object>();
-            string name = (string)node.getAttr("name");
-            result.Add("name", name);
-            result.Add("payload", payload);
-
-            List<object> children = new List<object>();
-            foreach (AbstractNode child in node.getChildren())
-            {
-                if (!onlyVisibleNode || (bool)child.getAttr("visible"))
-                {
-                    var childResult = dumpHierarchyImpl(child, onlyVisibleNode, false);
-                    if (childResult != null)
-                        children.Add(childResult);
-                }
-            }
-            if (children.Count > 0)
-            {
-                result.Add("children", children);
-            }
-            return result;
+            LogUtil.ULogDev("AbstractDumper.dumpHierarchy");
+            return dfsDump(abstractNode, onlyVisibleNode, false);
         }
+        //DumpHierarchy called by RootNode
+        //protected override Dictionary<string, object> dfsDump(AbstractNode node, bool onlyVisibleNode)
+        //{
+        //    UWASDKAgent.PushSample("UDmpOptmzd.dumpHImpl(node,only)");
+        //    LogUtil.ULogDev("UnityDmpOptimized.dumpHierarchyImpl");
 
-        protected Dictionary<string, object> dumpHierarchyImpl(AbstractNode node, bool onlyVisibleNode, bool protectedByParent)
+        //    if (node == null)
+        //    {
+        //        return null;
+        //    }
+
+        //    Dictionary<string, object> payload = node.enumerateAttrs();
+        //    Dictionary<string, object> result = new Dictionary<string, object>();
+        //    string name = (string)node.getAttr("name");
+        //    result.Add("name", name);
+        //    result.Add("payload", payload);
+
+        //    List<object> children = new List<object>();
+        //    foreach (AbstractNode child in node.getChildren())
+        //    {
+        //        if (!onlyVisibleNode || (bool)child.getAttr("visible"))
+        //        {
+        //            var childResult = dfsDump(child, onlyVisibleNode, false);
+        //            if (childResult != null)
+        //                children.Add(childResult);
+        //        }
+        //    }
+        //    if (children.Count > 0)
+        //    {
+        //        result.Add("children", children);
+        //    }
+        //    UWASDKAgent.PopSample();
+        //    return result;
+        //}
+
+        protected Dictionary<string, object> dfsDump(AbstractNode node, bool onlyVisibleNode, bool protectedByParent)
         {
-            LogUtil.ULogDev("UnityDumperOptimized.dumpHierarchyImpl");
+            UWASDKAgent.PushSample("UDmpOptmzd.dumpHImpl(node,only,pBP)");
+
+            LogUtil.ULogDev("UnityDmpOptimized.dumpHierarchyImpl");
 
             if (node == null)
             {
@@ -51,11 +63,11 @@ namespace Poco
             }
 
             Dictionary<string, object> payload = node.enumerateAttrs();
+
             Dictionary<string, object> result = new Dictionary<string, object>();
             string name = (string)node.getAttr("name");
             result.Add("name", name);
             result.Add("payload", payload);
-
 
             if (protectedByParent)
             {
@@ -64,7 +76,9 @@ namespace Poco
 
             bool protectChildren = false;
 
+            UWASDKAgent.PushSample("UDmpOptmzd.Filter");
             bool shouldVisit = Filter(node, out protectChildren);
+            UWASDKAgent.PopSample();
 
             if (!shouldVisit)
                 return null;
@@ -74,7 +88,7 @@ namespace Poco
             {
                 if (!onlyVisibleNode || (bool)child.getAttr("visible"))
                 {
-                    var childResult = dumpHierarchyImpl(child, onlyVisibleNode, protectChildren);
+                    var childResult = dfsDump(child, onlyVisibleNode, protectChildren);
                     if (childResult != null)
                         children.Add(childResult);
                 }
@@ -83,6 +97,7 @@ namespace Poco
             {
                 result.Add("children", children);
             }
+            UWASDKAgent.PopSample();
             return result;
         }
 
@@ -95,9 +110,12 @@ namespace Poco
         {
             //Strong protect judge
             //---------------------------------------------------------------------
-            
 
-            if (StrongProtect(node))
+            UWASDKAgent.PushSample("UDmpOptmzd.StringProtect");
+            bool tag1 = StrongProtect(node);
+            UWASDKAgent.PopSample();
+
+            if (tag1)
             {
                 protectChildren = true;
                 return true;
@@ -108,31 +126,36 @@ namespace Poco
                     protectChildren = true;
                 else
                     protectChildren = false;
-
             }
-
 
             //---------------------------------------------------------------------
             //Weak protection judge
-            if (WeakProtect(node))
-            {
+            UWASDKAgent.PushSample("UDmpOptmzd.WeakProtect");
+            bool tag2 = WeakProtect(node);
+            UWASDKAgent.PopSample();
 
+            if (tag2) {
+
+                UWASDKAgent.PushSample("UDmpOptmzd.BlackListContain");
+                bool tag3 = BlackListContain(node);
+                UWASDKAgent.PopSample();
 
                 // String black list
-                if (BlackListContain(node))
+                if (tag3)
+                {
                     return false;
+                }
                 else
+                {
                     return true;
+                }
             }
             else
             {
-
                 //Weak black list
                 return false;
             }
             //---------------------------------------------------------------------
-
-
         }
 
 
@@ -148,19 +171,19 @@ namespace Poco
             if (node.IsUIPanel())
             {
                 return true;
-
             }
 
             if (Config.Instance.strongWhiteList.Contains(name))
             {
                 return true;
             }
-
             return false;
         }
 
         private bool WeakProtect(AbstractNode node)
         {
+
+            if (node.isFirstLayer) return true;
 
             if ((node as UnityNodeOptimized).protectedByParent)
                 return true;
@@ -175,7 +198,6 @@ namespace Poco
             //{
             //    return true;
             //}
-
             return false;
         }
 
@@ -195,7 +217,7 @@ namespace Poco
             return null;
         }
 
-        public override AbstractNode getRoot()
+        public AbstractNode getRoot()
         {
             LogUtil.ULogDev("UnityDumperOptimized.getRoot");
             return new RootNodeOptimized();
@@ -204,24 +226,30 @@ namespace Poco
 
     public class RootNodeOptimized : AbstractNode
     {
-        private List<AbstractNode> children = null;
+        //private List<AbstractNode> children = null;
 
         public RootNodeOptimized()
         {
+            UWASDKAgent.PushSample("RootNodeOptimized.ctor");
+
             LogUtil.ULogDev("RootNodeOptimized.ctor");
 
-            children = new List<AbstractNode>();
-            foreach (GameObject obj in Transform.FindObjectsOfType(typeof(GameObject)))
-            {
-                if (obj.transform.parent == null)
-                {
-                    children.Add(new UnityNodeOptimized(obj));
-                }
-            }
+         
+            UWASDKAgent.PopSample();
         }
 
         public override List<AbstractNode> getChildren() //<Modified> 
         {
+            List<AbstractNode> children = new List<AbstractNode>();
+            foreach (GameObject obj in Transform.FindObjectsOfType(typeof(GameObject)))
+            {
+                if (obj.transform.parent == null)
+                {
+                    AbstractNode child = new UnityNodeOptimized(obj);
+                    child.isFirstLayer = true;
+                    children.Add(child);
+                }
+            }
             return children;
         }
     }

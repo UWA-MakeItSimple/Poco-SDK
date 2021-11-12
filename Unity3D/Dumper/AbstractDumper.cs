@@ -14,19 +14,23 @@ namespace Poco
             return null;
         }
 
-        public Dictionary<string, object> dumpHierarchy()
+        //public Dictionary<string, object> dumpHierarchy()
+        //{
+        //    return dumpHierarchyImpl(getRoot(), true);
+        //}
+        public virtual Dictionary<string, object>  dumpHierarchy(bool onlyVisibleNode)
         {
-            return dumpHierarchyImpl(getRoot(), true);
-        }
-        public Dictionary<string, object> dumpHierarchy(bool onlyVisibleNode)
-        {
+            UWASDKAgent.PushSample("AbstractDumper.BeforeGetRoot");
+            AbstractNode abstractNode = getRoot();
+            UWASDKAgent.PopSample();
+
             LogUtil.ULogDev("AbstractDumper.dumpHierarchy");
-            return dumpHierarchyImpl(getRoot(), onlyVisibleNode);
+            return dfsDump(abstractNode, onlyVisibleNode);
         }
 
-        protected virtual Dictionary<string, object> dumpHierarchyImpl(AbstractNode node, bool onlyVisibleNode)
+        protected virtual Dictionary<string, object> dfsDump(AbstractNode node, bool onlyVisibleNode)
         {
-
+            //throw new Exception("dumpHierarchyImpl Not implement");
             LogUtil.ULogDev("AbstractDumper.dumpHierarchyImpl");
 
             if (node == null)
@@ -45,7 +49,7 @@ namespace Poco
             {
                 if (!onlyVisibleNode || (bool)child.getAttr("visible"))
                 {
-                    children.Add(dumpHierarchyImpl(child, onlyVisibleNode));
+                    children.Add(dfsDump(child, onlyVisibleNode));
                 }
             }
             if (children.Count > 0)
@@ -65,7 +69,7 @@ namespace Poco
     {
         AbstractNode getRoot();
 
-        Dictionary<string, object> dumpHierarchy();
+        //Dictionary<string, object> dumpHierarchy();
         Dictionary<string, object> dumpHierarchy(bool onlyVisibleNode);
 
         List<float> getPortSize();

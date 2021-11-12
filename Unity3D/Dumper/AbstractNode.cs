@@ -17,6 +17,9 @@ public class AbstractNode
 		"zOrders"
 	};
 
+
+	public bool isFirstLayer = false;
+
 	public virtual AbstractNode getParent ()
 	{
 		return null;
