@@ -59,7 +59,7 @@ namespace Poco.TcpServer
         public List<string> swap_msgs()
         {
             List<string> ret = msgs;
-            msgs = new List<string>();
+            msgs = new List<string>(5);
             return ret;
         }
 

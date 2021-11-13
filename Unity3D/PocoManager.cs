@@ -18,7 +18,7 @@ namespace Poco
 
     public class PocoManager : MonoBehaviour
     {
-        public const string versionCode = "UWA-1.2";
+        public const string versionCode = "UWA-1.3";
         public int port = 5001;
         private bool mRunning;
         public AsyncTcpServer server = null;
@@ -69,10 +69,11 @@ namespace Poco
                 string response = rpc.formatResponse("123", result, settings);
 
                 string timeTag = DateTime.Now.ToString("dd-HHmmss");
-                using (System.IO.StreamWriter sw = new System.IO.StreamWriter("DumpData/DumpData-" + versionCode+"-"  + timeTag + ".json"))
+                using (System.IO.StreamWriter sw = new System.IO.StreamWriter("DumpData/DumpData-" + timeTag + ".json"))
                 {
                     sw.Write(response);
                 }
+
 
                 byte[] resBytes = System.Text.Encoding.Default.GetBytes(response);
                 UnityEngine.Debug.Log(((float)resBytes.Length) / 1024 / 1024);
@@ -89,7 +90,8 @@ namespace Poco
             //TODO 完善Dumper的开关机制
             dumper = dumperOptimized;
             LogUtil.ULogDev("PocoManager awake");
-            Debug.Log("PocoManager awake");
+
+
             Application.runInBackground = true;
             DontDestroyOnLoad(this);
             prot = new SimpleProtocolFilter();
@@ -112,6 +114,8 @@ namespace Poco
             rpc.addRpcMethod("CollectWeakWhitelist", CollectWeakWhitelist);
             rpc.addRpcMethod("GetDumpInfo", GetDumpInfo);
 
+
+
             mRunning = true;
 
             for (int i = 0; i < 5; i++)
@@ -127,7 +131,7 @@ namespace Poco
                 try
                 {
                     this.server.Start();
-                    Debug.Log(string.Format("Tcp server started and listening at {0}", server.Port));
+                    LogUtil.ULogDev(string.Format("Tcp server started and listening at {0}", server.Port));
                     break;
                 }
                 catch (SocketException e)
@@ -193,19 +197,7 @@ namespace Poco
             if (dumper == null)
                 throw new Exception("Dumper has not been initialized");
 
-#if UWA_POCO_DEBUG
-            if(dumper is UnityDumper)
-            {
-                Debug.Log("Dump with original UnityDumper");
-            }else if(dumper is UnityDumperOptimized)
-            {
-                Debug.Log("Dump with UnityDumperOptimized");
-            }
-            else
-            {
-                throw new Exception("Unkown dumper");
-            }
-#endif
+
 
             var onlyVisibleNode = true;
             if (param.Count > 0)
@@ -373,7 +365,6 @@ namespace Poco
             return "CollectWeakWhitelist succeeded";
 
         }
-
         [RPC]
         private object GetDumpInfo(List<object> param)
         {
@@ -391,7 +382,6 @@ namespace Poco
 
         }
 
-
         #endregion
 
 
@@ -401,9 +391,9 @@ namespace Poco
             foreach (TcpClientState client in inbox.Values)
             {
                 List<string> msgs = client.Prot.swap_msgs();
-                msgs.ForEach(delegate (string msg)
-                {
 
+                foreach(string msg in msgs)
+                {
                     var sw = new Stopwatch();
                     sw.Start();
                     var t0 = sw.ElapsedMilliseconds;
@@ -417,13 +407,17 @@ namespace Poco
                     server.Send(client.TcpClient, bytes);
                     var t3 = sw.ElapsedMilliseconds;
 
-
                     debugProfilingData["handleRpcRequest"] = t1 - t0;
                     debugProfilingData["packRpcResponse"] = t2 - t1;
                     TcpClientState internalClientToBeThrowAway;
                     string tcpClientKey = client.TcpClient.Client.RemoteEndPoint.ToString();
                     inbox.TryRemove(tcpClientKey, out internalClientToBeThrowAway);
-                });
+
+                    DicPoolManager.ReleasePools();
+                    ListPoolManager.ReleasePools();
+
+                }
+
             }
 
             vr_support.PeekCommand();
@@ -483,12 +477,27 @@ namespace Poco
 
         public string HandleMessage(string json)
         {
+            Debug.Log(json);
+
             UWASDKAgent.PushSample("PocoManager.HandleMessage");
 
             Dictionary<string, object> data = JsonConvert.DeserializeObject<Dictionary<string, object>>(json, settings);
             if (data.ContainsKey("method"))
             {
-                string method = data["method"].ToString();
+
+                string method = null;
+                try
+                {
+                    method = data["method"].ToString();
+
+                }catch(Exception e)
+                {
+                    throw e;
+                }
+
+
+
+
                 List<object> param = null;
                 if (data.ContainsKey("params"))
                 {
@@ -508,6 +517,7 @@ namespace Poco
                 object result = null;
                 try
                 {
+                    
                     result = RPCHandler[method](param);
                 }
                 catch (Exception e)
@@ -541,7 +551,8 @@ namespace Poco
         // Call a method in the server
         public string formatRequest(string method, object idAction, List<object> param = null)
         {
-            Dictionary<string, object> data = new Dictionary<string, object>();
+            //Dictionary<string, object> data = new Dictionary<string, object>();
+            Dictionary<string, object> data = DicPoolSO4.Ins.GetObj();
             data["jsonrpc"] = "2.0";
             data["method"] = method;
             if (param != null)
@@ -559,7 +570,8 @@ namespace Poco
         // Send a response from a request the server made to this client
         public string formatResponse(object idAction, object result)
         {
-            Dictionary<string, object> rpc = new Dictionary<string, object>();
+            //Dictionary<string, object> rpc = new Dictionary<string, object>();
+            Dictionary<string, object> rpc = DicPoolSO3.Ins.GetObj();
             rpc["jsonrpc"] = "2.0";
             rpc["id"] = idAction;
             rpc["result"] = result;
@@ -568,7 +580,9 @@ namespace Poco
 
         public string formatResponse(object idAction, object result, JsonSerializerSettings settings)
         {
-            Dictionary<string, object> rpc = new Dictionary<string, object>();
+            //Dictionary<string, object> rpc = new Dictionary<string, object>();
+            Dictionary<string, object> rpc = DicPoolSO3.Ins.GetObj();
+
             rpc["jsonrpc"] = "2.0";
             rpc["id"] = idAction;
             rpc["result"] = result;
@@ -576,13 +590,52 @@ namespace Poco
         }
 
         // Send a error to the server from a request it made to this client
+        //public string formatResponseError(object idAction, IDictionary<string, object> data, Exception e)
+        //{
+        //    formatResponseError1(idAction, data, e);
+        //    return formatResponseError2(idAction, data, e);
+
+        //}
+
+        //public string formatResponseError1(object idAction, IDictionary<string, object> data, Exception e)
+        //{
+        //    Dictionary<string, object> rpc = new Dictionary<string, object>();
+
+        //    //Dictionary<string, object> rpc = DicPoolSO3.Ins.GetObj();
+
+        //    rpc["jsonrpc"] = "2.0";
+        //    rpc["id"] = idAction;
+
+        //    Dictionary<string, object> errorDefinition = new Dictionary<string, object>();
+        //    //Dictionary<string, object> errorDefinition = DicPoolSO3.Ins.GetObj();
+        //    errorDefinition["code"] = 1;
+        //    errorDefinition["message"] = e.ToString();
+
+        //    if (data != null)
+        //    {
+        //        errorDefinition["data"] = data;
+        //    }
+
+        //    rpc["error"] = errorDefinition;
+        //    string responseMsg = JsonConvert.SerializeObject(rpc, settings);
+
+        //    LogUtil.ULogDev(rpc["error"].ToString());
+        //    LogUtil.ULogDev("Error1-----:" + responseMsg);
+
+        //    return responseMsg;
+        //}
+
         public string formatResponseError(object idAction, IDictionary<string, object> data, Exception e)
         {
-            Dictionary<string, object> rpc = new Dictionary<string, object>();
+            //Dictionary<string, object> rpc = new Dictionary<string, object>();
+
+            Dictionary<string, object> rpc = DicPoolSO3.Ins.GetObj();
+
             rpc["jsonrpc"] = "2.0";
             rpc["id"] = idAction;
 
-            Dictionary<string, object> errorDefinition = new Dictionary<string, object>();
+            //Dictionary<string, object> errorDefinition = new Dictionary<string, object>();
+            Dictionary<string, object> errorDefinition = DicPoolSO3.Ins.GetObj();
             errorDefinition["code"] = 1;
             errorDefinition["message"] = e.ToString();
 
@@ -592,8 +645,14 @@ namespace Poco
             }
 
             rpc["error"] = errorDefinition;
-            return JsonConvert.SerializeObject(rpc, settings);
+            string responseMsg = JsonConvert.SerializeObject(rpc, settings);
+
+            LogUtil.ULogDev(rpc["error"].ToString());
+            LogUtil.ULogDev("Error2-----:" + responseMsg);
+
+            return responseMsg;
         }
+
 
         public void addRpcMethod(string name, RpcMethod method)
         {

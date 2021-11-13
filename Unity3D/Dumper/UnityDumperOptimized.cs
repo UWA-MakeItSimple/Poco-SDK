@@ -5,7 +5,7 @@ using Poco.Utils;
 
 namespace Poco
 {
-    public class UnityDumperOptimized : StatefulSingleton<UnityDumperOptimized>, IDumper<GameObject>
+    public class UnityDumperOptimized : Singleton<UnityDumperOptimized>, IDumper<GameObject>
     {
 
         //List<GameObject> firstLvlNodes;
@@ -59,7 +59,8 @@ namespace Poco
             //CreateRoot
 
             Dictionary<string, object> payload = RootNodeGrabber.Instance.enumerateAttrs();
-            Dictionary<string, object> result = new Dictionary<string, object>();
+            //Dictionary<string, object> result = new Dictionary<string, object>();
+            Dictionary<string, object> result = DicPoolSO3.Ins.GetObj();
             object name = "";
             payload.TryGetValue("name", out name);
             result["name"] = name;
@@ -67,7 +68,8 @@ namespace Poco
 
 
             int depth = 0;
-            List<object> children = new List<object>();
+            //List<object> children = new List<object>();
+            List<object> children = ListPool_object.Ins.GetObj();
             foreach (GameObject go in firstLevelNodes)
             {
 
@@ -139,7 +141,8 @@ namespace Poco
             if (!shouldVisit)
                 return null;
 
-            List<object> children = new List<object>();
+            //List<object> children = new List<object>();
+            List<object> children = ListPool_object.Ins.GetObj();
 
             depth++;
 
@@ -158,7 +161,10 @@ namespace Poco
             UnityNodeGrabberOptimized.Instance.GrabNode(go);
             Dictionary<string, object> payload = UnityNodeGrabberOptimized.Instance.enumerateAttrs();
             string name = (string)UnityNodeGrabberOptimized.Instance.getAttr("name");
-            Dictionary<string, object> result = new Dictionary<string, object>();
+
+
+            //Dictionary<string, object> result = new Dictionary<string, object>();
+            Dictionary<string, object> result = DicPoolSO3.Ins.GetObj();
 
             result["name"] = name;
             result["payload"] = payload;
@@ -294,7 +300,8 @@ namespace Poco
         public List<GameObject> GetFirstLevelNodes()
         {
 
-            List<GameObject> firstLvlNodes = new List<GameObject>();
+            //List<GameObject> firstLvlNodes = new List<GameObject>();
+            List<GameObject> firstLvlNodes = ListPool_GameObject.Ins.GetObj();
 
 
             foreach (GameObject obj in Transform.FindObjectsOfType(typeof(GameObject)))
@@ -313,18 +320,6 @@ namespace Poco
         }
 
 
-        public override void Release()
-        {
-            //firstLvlNodes.Clear();
-
-            throw new Exception("Not Impl");
-            //TODO
-            //ObjectPool<List<GameObject>> Clear
-            //ObjectPool<Dictionary<string, object>> Clear
-
-
-
-        }
     }
 
     //public class RootNodeOptimized : AbstractNode
