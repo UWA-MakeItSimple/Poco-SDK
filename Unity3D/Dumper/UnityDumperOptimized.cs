@@ -5,16 +5,84 @@ using Poco.Utils;
 
 namespace Poco
 {
-    public class UnityDumperOptimized : AbstractDumper
+    public class UnityDumperOptimized : StatefulSingleton<UnityDumperOptimized>, IDumper<GameObject>
     {
-        public override Dictionary<string, object> dumpHierarchy(bool onlyVisibleNode)
-        {
-            UWASDKAgent.PushSample("AbstractDumper.BeforeGetRoot");
-            AbstractNode abstractNode = getRoot();
-            UWASDKAgent.PopSample();
 
-            LogUtil.ULogDev("AbstractDumper.dumpHierarchy");
-            return dfsDump(abstractNode, onlyVisibleNode, false);
+        //List<GameObject> firstLvlNodes;
+
+
+        public UnityDumperOptimized()
+        {
+            //firstLvlNodes = new List<GameObject>(30);
+        }
+
+
+        //protected override Dictionary<string, object> dfsDump(AbstractNode node, bool onlyVisibleNode)
+        //{
+        //    UWASDKAgent.PushSample("UDmpOptmzd.dumpHImpl(node,only)");
+        //    LogUtil.ULogDev("UnityDmpOptimized.dumpHierarchyImpl");
+
+        //    if (node == null)
+        //    {
+        //        return null;
+        //    }
+
+        //    Dictionary<string, object> payload = node.enumerateAttrs();
+        //    Dictionary<string, object> result = new Dictionary<string, object>();
+        //    string name = (string)node.getAttr("name");
+        //    result.Add("name", name);
+        //    result.Add("payload", payload);
+
+        //    List<object> children = new List<object>();
+        //    foreach (AbstractNode child in node.getChildren())
+        //    {
+        //        if (!onlyVisibleNode || (bool)child.getAttr("visible"))
+        //        {
+        //            var childResult = dfsDump(child, onlyVisibleNode, false);
+        //            if (childResult != null)
+        //                children.Add(childResult);
+        //        }
+        //    }
+        //    if (children.Count > 0)
+        //    {
+        //        result.Add("children", children);
+        //    }
+        //    UWASDKAgent.PopSample();
+        //    return result;
+        //}
+
+        public Dictionary<string, object> DumpHierarchy(bool onlyVisibleNode)
+        {
+            List<GameObject> firstLevelNodes = GetFirstLevelNodes();
+
+
+            //CreateRoot
+
+            Dictionary<string, object> payload = RootNodeGrabber.Instance.enumerateAttrs();
+            Dictionary<string, object> result = new Dictionary<string, object>();
+            object name = "";
+            payload.TryGetValue("name", out name);
+            result["name"] = name;
+            result["payload"] = payload;
+
+
+            int depth = 0;
+            List<object> children = new List<object>();
+            foreach (GameObject go in firstLevelNodes)
+            {
+
+                var childResult = dfsDump(go, onlyVisibleNode, false, depth);
+
+                if (childResult != null)
+                    children.Add(childResult);
+            }
+
+            if (children.Count > 0)
+            {
+                result["children"] = children;
+            }
+
+            return result;
         }
         //DumpHierarchy called by RootNode
         //protected override Dictionary<string, object> dfsDump(AbstractNode node, bool onlyVisibleNode)
@@ -51,51 +119,53 @@ namespace Poco
         //    return result;
         //}
 
-        protected Dictionary<string, object> dfsDump(AbstractNode node, bool onlyVisibleNode, bool protectedByParent)
+        protected Dictionary<string, object> dfsDump(GameObject go, bool onlyVisibleNode, bool protectedByParent, int depth)
         {
             UWASDKAgent.PushSample("UDmpOptmzd.dumpHImpl(node,only,pBP)");
 
             LogUtil.ULogDev("UnityDmpOptimized.dumpHierarchyImpl");
 
-            if (node == null)
+            if (go == null)
             {
                 return null;
-            }
-
-            Dictionary<string, object> payload = node.enumerateAttrs();
-
-            Dictionary<string, object> result = new Dictionary<string, object>();
-            string name = (string)node.getAttr("name");
-            result.Add("name", name);
-            result.Add("payload", payload);
-
-            if (protectedByParent)
-            {
-                (node as UnityNodeOptimized).protectedByParent = true;
             }
 
             bool protectChildren = false;
 
             UWASDKAgent.PushSample("UDmpOptmzd.Filter");
-            bool shouldVisit = Filter(node, out protectChildren);
+            bool shouldVisit = Filter(go, protectedByParent, out protectChildren, depth);
             UWASDKAgent.PopSample();
 
             if (!shouldVisit)
                 return null;
 
             List<object> children = new List<object>();
-            foreach (AbstractNode child in node.getChildren())
+
+            depth++;
+
+            foreach (Transform trans in go.transform)
             {
-                if (!onlyVisibleNode || (bool)child.getAttr("visible"))
+                GameObject child = trans.gameObject;
+                if (!onlyVisibleNode || UnityNodeGrabberOptimized.GameObjectVisible(child) )
                 {
-                    var childResult = dfsDump(child, onlyVisibleNode, protectChildren);
+                    var childResult = dfsDump(child, onlyVisibleNode, protectChildren, depth);
                     if (childResult != null)
                         children.Add(childResult);
                 }
             }
+
+
+            UnityNodeGrabberOptimized.Instance.GrabNode(go);
+            Dictionary<string, object> payload = UnityNodeGrabberOptimized.Instance.enumerateAttrs();
+            string name = (string)UnityNodeGrabberOptimized.Instance.getAttr("name");
+            Dictionary<string, object> result = new Dictionary<string, object>();
+
+            result["name"] = name;
+            result["payload"] = payload;
+
             if (children.Count > 0)
             {
-                result.Add("children", children);
+                result["children"] = children;
             }
             UWASDKAgent.PopSample();
             return result;
@@ -106,13 +176,16 @@ namespace Poco
         /// </summary>
         /// <param name="node"></param>
         /// <returns></returns>
-        private bool Filter(AbstractNode node, out bool protectChildren)
+        private bool Filter(GameObject go,bool protectedByParent, out bool protectChildren, int depth)
         {
+
+            string name = go.name;
+
             //Strong protect judge
             //---------------------------------------------------------------------
 
             UWASDKAgent.PushSample("UDmpOptmzd.StringProtect");
-            bool tag1 = StrongProtect(node);
+            bool tag1 = StrongProtect(go, name);
             UWASDKAgent.PopSample();
 
             if (tag1)
@@ -122,7 +195,7 @@ namespace Poco
             }
             else
             {
-                if (((UnityNodeOptimized)node).protectedByParent)
+                if (protectedByParent)
                     protectChildren = true;
                 else
                     protectChildren = false;
@@ -131,13 +204,13 @@ namespace Poco
             //---------------------------------------------------------------------
             //Weak protection judge
             UWASDKAgent.PushSample("UDmpOptmzd.WeakProtect");
-            bool tag2 = WeakProtect(node);
+            bool tag2 = WeakProtect(go, name, protectedByParent, depth);
             UWASDKAgent.PopSample();
 
             if (tag2) {
 
                 UWASDKAgent.PushSample("UDmpOptmzd.BlackListContain");
-                bool tag3 = BlackListContain(node);
+                bool tag3 = BlackListContain(name);
                 UWASDKAgent.PopSample();
 
                 // String black list
@@ -164,11 +237,9 @@ namespace Poco
         /// </summary>
         /// <param name="node"></param>
         /// <returns></returns>
-        private bool StrongProtect(AbstractNode node)
+        private bool StrongProtect(GameObject go, string name)
         {
-            string name = ((UnityNodeOptimized)node).name;
-
-            if (node.IsUIPanel())
+            if (UnityNodeGrabberOptimized.Instance.IsUIPanel(go))
             {
                 return true;
             }
@@ -180,15 +251,15 @@ namespace Poco
             return false;
         }
 
-        private bool WeakProtect(AbstractNode node)
+        private bool WeakProtect(GameObject go, string name, bool protectedByParent, int depth)
         {
 
-            if (node.isFirstLayer) return true;
-
-            if ((node as UnityNodeOptimized).protectedByParent)
+            if (depth == 0)
                 return true;
 
-            string name = ((UnityNodeOptimized)node).name;
+            if (protectedByParent)
+                return true;
+
             if (Config.Instance.weakWhiteList.Contains(name))
             {
                 return true;
@@ -201,15 +272,12 @@ namespace Poco
             return false;
         }
 
-        private bool BlackListContain(AbstractNode node)
+        private bool BlackListContain(string name)
         {
-            string name = ((UnityNodeOptimized)node).name;
-
             if (Config.Instance.blackList.Contains(name))
                 return true;
             else
                 return false;
-
         }
 
         public virtual List<float> getPortSize()
@@ -217,42 +285,68 @@ namespace Poco
             return null;
         }
 
-        public AbstractNode getRoot()
+        //public AbstractNode GetRoot()
+        //{
+        //    LogUtil.ULogDev("UnityDumperOptimized.getRoot");
+        //    return new RootNodeOptimized();
+        //}
+
+        public List<GameObject> GetFirstLevelNodes()
         {
-            LogUtil.ULogDev("UnityDumperOptimized.getRoot");
-            return new RootNodeOptimized();
-        }
-    }
 
-    public class RootNodeOptimized : AbstractNode
-    {
-        //private List<AbstractNode> children = null;
+            List<GameObject> firstLvlNodes = new List<GameObject>();
 
-        public RootNodeOptimized()
-        {
-            UWASDKAgent.PushSample("RootNodeOptimized.ctor");
 
-            LogUtil.ULogDev("RootNodeOptimized.ctor");
-
-         
-            UWASDKAgent.PopSample();
-        }
-
-        public override List<AbstractNode> getChildren() //<Modified> 
-        {
-            List<AbstractNode> children = new List<AbstractNode>();
             foreach (GameObject obj in Transform.FindObjectsOfType(typeof(GameObject)))
             {
                 if (obj.transform.parent == null)
                 {
-                    AbstractNode child = new UnityNodeOptimized(obj);
-                    child.isFirstLayer = true;
-                    children.Add(child);
+                    firstLvlNodes.Add(obj);
                 }
             }
-            return children;
+            return firstLvlNodes;
+        }
+
+        public List<float> GetPortSize()
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public override void Release()
+        {
+            //firstLvlNodes.Clear();
+
+            throw new Exception("Not Impl");
+            //TODO
+            //ObjectPool<List<GameObject>> Clear
+            //ObjectPool<Dictionary<string, object>> Clear
+
+
+
         }
     }
+
+    //public class RootNodeOptimized : AbstractNode
+    //{
+    //    //private List<AbstractNode> children = null;
+
+    //    public RootNodeOptimized()
+    //    {
+    //        UWASDKAgent.PushSample("RootNodeOptimized.ctor");
+
+    //        LogUtil.ULogDev("RootNodeOptimized.ctor");
+
+         
+    //        UWASDKAgent.PopSample();
+    //    }
+
+    //    public override List<AbstractNode> getChildren() //<Modified> 
+    //    {
+    //        List<AbstractNode> children = new List<AbstractNode>();
+         
+    //    }
+    //}
 }
 
 

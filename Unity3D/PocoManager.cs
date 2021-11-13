@@ -18,17 +18,17 @@ namespace Poco
 
     public class PocoManager : MonoBehaviour
     {
-        public const string versionCode = "UWA-1";
+        public const string versionCode = "UWA-1.2";
         public int port = 5001;
         private bool mRunning;
         public AsyncTcpServer server = null;
         private RPCParser rpc = null;
         private SimpleProtocolFilter prot = null;
 
-        private UnityDumper dumperOriginal = new UnityDumper();
+        //private IDumper<GameObject> dumperOriginal = new UnityDumper();
         private UnityDumperOptimized dumperOptimized = new UnityDumperOptimized();
 
-        private AbstractDumper dumper;// = new UnityDumper();
+        private IDumper<GameObject> dumper;// = new UnityDumper();
 
 
         // = new UnityDumperOptimized();
@@ -69,11 +69,10 @@ namespace Poco
                 string response = rpc.formatResponse("123", result, settings);
 
                 string timeTag = DateTime.Now.ToString("dd-HHmmss");
-                using (System.IO.StreamWriter sw = new System.IO.StreamWriter("DumpData/DumpData-" + timeTag + ".json"))
+                using (System.IO.StreamWriter sw = new System.IO.StreamWriter("DumpData/DumpData-" + versionCode+"-"  + timeTag + ".json"))
                 {
                     sw.Write(response);
                 }
-
 
                 byte[] resBytes = System.Text.Encoding.Default.GetBytes(response);
                 UnityEngine.Debug.Log(((float)resBytes.Length) / 1024 / 1024);
@@ -87,7 +86,8 @@ namespace Poco
         {
             UWASDKAgent.PushSample("PocoManager.Awake");
 
-            dumper = dumperOriginal;
+            //TODO 完善Dumper的开关机制
+            dumper = dumperOptimized;
             LogUtil.ULogDev("PocoManager awake");
             Debug.Log("PocoManager awake");
             Application.runInBackground = true;
@@ -107,9 +107,10 @@ namespace Poco
 
             rpc.addRpcMethod("SetBlackList", SetBlackList);
             rpc.addRpcMethod("SetWhiteList", SetWhiteList);
-            rpc.addRpcMethod("SetPruningEnabled", SetPruningEnabled);
+            //rpc.addRpcMethod("SetPruningEnabled", SetPruningEnabled);
             rpc.addRpcMethod("SetBlockedAttributes", SetBlockedAttributes);
             rpc.addRpcMethod("CollectWeakWhitelist", CollectWeakWhitelist);
+            rpc.addRpcMethod("GetDumpInfo", GetDumpInfo);
 
             mRunning = true;
 
@@ -179,15 +180,15 @@ namespace Poco
         {
 
             UWASDKAgent.PushSample("PocoManager.Dump");
-
-            if (Config.Instance.pruningEnabled)
-            {
-                dumper = dumperOptimized;
-            }
-            else
-            {
-                dumper = dumperOriginal;
-            }
+            dumper = dumperOptimized;
+            //if (Config.Instance.pruningEnabled)
+            //{
+            //    dumper = dumperOptimized;
+            //}
+            //else
+            //{
+            //    dumper = dumperOriginal;
+            //}
 
             if (dumper == null)
                 throw new Exception("Dumper has not been initialized");
@@ -213,7 +214,7 @@ namespace Poco
             }
             var sw = new Stopwatch();
             sw.Start();
-            var h = dumper.dumpHierarchy(onlyVisibleNode);
+            var h = dumper.DumpHierarchy(onlyVisibleNode);
             debugProfilingData["dump"] = sw.ElapsedMilliseconds;
 
             LogUtil.ULogDev("Dump Method executed");
@@ -264,7 +265,7 @@ namespace Poco
             {
                 if (go.GetInstanceID() == instanceId)
                 {
-                    return UnityNode.SetText(go, textVal);
+                    return UnityNodeGrabberOptimized.SetText(go, textVal);
                 }
             }
             return false;
@@ -313,27 +314,27 @@ namespace Poco
             return "SetWhiteList: " + wl.Count;
         }
 
-        [RPC]
-        private object SetPruningEnabled(List<object> param)
-        {
-            var value = true;
-            if (param.Count > 0)
-            {
-                value = (bool)param[0];
-            }
+        //[RPC]
+        //private object SetPruningEnabled(List<object> param)
+        //{
+        //    var value = true;
+        //    if (param.Count > 0)
+        //    {
+        //        value = (bool)param[0];
+        //    }
 
-            Config.Instance.pruningEnabled = value;
+        //    Config.Instance.pruningEnabled = value;
 
-            if(value)
-            {
-                dumper = dumperOptimized;
-            }else
-            {
-                dumper = dumperOriginal;
-            }
+        //    if(value)
+        //    {
+        //        dumper = dumperOptimized;
+        //    }else
+        //    {
+        //        dumper = dumperOriginal;
+        //    }
 
-            return "SetPruningEnabled " + value;
-        }
+        //    return "SetPruningEnabled " + value;
+        //}
 
         [RPC]
         private object SetBlockedAttributes(List<object> param)
@@ -372,6 +373,24 @@ namespace Poco
             return "CollectWeakWhitelist succeeded";
 
         }
+
+        [RPC]
+        private object GetDumpInfo(List<object> param)
+        {
+
+            object result = Dump(new List<object> { true });
+
+            JsonSerializerSettings settings = new JsonSerializerSettings()
+            {
+                StringEscapeHandling = StringEscapeHandling.EscapeNonAscii
+
+            };
+            settings.Formatting = Formatting.Indented;
+
+            return result;
+
+        }
+
 
         #endregion
 
