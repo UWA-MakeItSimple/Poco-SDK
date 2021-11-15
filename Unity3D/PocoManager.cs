@@ -26,9 +26,9 @@ namespace Poco
         private SimpleProtocolFilter prot = null;
 
         //private IDumper<GameObject> dumperOriginal = new UnityDumper();
-        private UnityDumperOptimized dumperOptimized = new UnityDumperOptimized();
+        //private UnityDumper dumperOptimized = new UnityDumper();
 
-        private IDumper<GameObject> dumper;// = new UnityDumper();
+        private IDumper<GameObject> dumper = new UnityDumper();
 
 
         // = new UnityDumperOptimized();
@@ -87,8 +87,6 @@ namespace Poco
         {
             UWASDKAgent.PushSample("PocoManager.Awake");
 
-            //TODO 完善Dumper的开关机制
-            dumper = dumperOptimized;
             LogUtil.ULogDev("PocoManager awake");
 
 
@@ -109,7 +107,7 @@ namespace Poco
 
             rpc.addRpcMethod("SetBlackList", SetBlackList);
             rpc.addRpcMethod("SetWhiteList", SetWhiteList);
-            //rpc.addRpcMethod("SetPruningEnabled", SetPruningEnabled);
+            rpc.addRpcMethod("SetPruningEnabled", SetPruningEnabled);
             rpc.addRpcMethod("SetBlockedAttributes", SetBlockedAttributes);
             rpc.addRpcMethod("CollectWeakWhitelist", CollectWeakWhitelist);
             rpc.addRpcMethod("GetDumpInfo", GetDumpInfo);
@@ -184,15 +182,7 @@ namespace Poco
         {
 
             UWASDKAgent.PushSample("PocoManager.Dump");
-            dumper = dumperOptimized;
-            //if (Config.Instance.pruningEnabled)
-            //{
-            //    dumper = dumperOptimized;
-            //}
-            //else
-            //{
-            //    dumper = dumperOriginal;
-            //}
+
 
             if (dumper == null)
                 throw new Exception("Dumper has not been initialized");
@@ -257,7 +247,7 @@ namespace Poco
             {
                 if (go.GetInstanceID() == instanceId)
                 {
-                    return UnityNodeGrabberOptimized.SetText(go, textVal);
+                    return UnityNodeGrabber.SetText(go, textVal);
                 }
             }
             return false;
@@ -306,27 +296,19 @@ namespace Poco
             return "SetWhiteList: " + wl.Count;
         }
 
-        //[RPC]
-        //private object SetPruningEnabled(List<object> param)
-        //{
-        //    var value = true;
-        //    if (param.Count > 0)
-        //    {
-        //        value = (bool)param[0];
-        //    }
+        [RPC]
+        private object SetPruningEnabled(List<object> param)
+        {
+            var value = true;
+            if (param.Count > 0)
+            {
+                value = (bool)param[0];
+            }
 
-        //    Config.Instance.pruningEnabled = value;
+            Config.Instance.pruningEnabled = value;
 
-        //    if(value)
-        //    {
-        //        dumper = dumperOptimized;
-        //    }else
-        //    {
-        //        dumper = dumperOriginal;
-        //    }
-
-        //    return "SetPruningEnabled " + value;
-        //}
+            return "SetPruningEnabled " + value;
+        }
 
         [RPC]
         private object SetBlockedAttributes(List<object> param)
