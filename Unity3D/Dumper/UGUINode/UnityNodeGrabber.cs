@@ -152,6 +152,29 @@ namespace Poco
         //}
 
 
+
+        private List<string> attrbutesNames = new List<string>
+        {
+            "name",
+            "type",
+            "visible",
+            "pos",
+            "size",
+            "scale",
+            "anchorPoint",
+            "zOrders",
+            "clickable",
+            "text",
+            "components",
+            "texture",
+            "tag",
+            "_ilayer",
+            "layer",
+            "_instanceId"
+        };
+
+
+
         public Dictionary<string, object> GetPayload()
         {
             UWASDKAgent.PushSample("UNodeOptmzd.GetPayload");
@@ -159,88 +182,19 @@ namespace Poco
             //Dictionary<string, object> payload = new Dictionary<string, object>();
             Dictionary<string, object> payload = DicPoolSO16.Ins.GetObj();
 
-            payload["name"] = name;
-
-            string type = GuessObjectTypeFromComponentNames(components);
-            if(type!=null)
+            foreach(var attrName in attrbutesNames)
             {
-                payload["type"] = type;
-
+                if(!Config.Instance.blackList.Contains(attrName))
+                {
+                    object attr = GetAttr(attrName);
+                    if(attr!=null)
+                    {
+                        payload[attrName] = attr;
+                    }
+                }
             }
 
-            bool visible = GameObjectVisible(renderer, components);
-            payload["visible"] = visible;
-
-            float[] pos = GameObjectPosInScreen(objectPos, renderer, rectTransform, rect);
-            if (pos != null)
-            {
-                payload["pos"] = pos;
-
-            }
-            float[] size = GameObjectSizeInScreen(rect, rectTransform);
-            if (size != null)
-            {
-                payload["size"] = size;
-            }
-
-
-            payload["scale"] = scale;
-
-            var anchorPoint = GameObjectAnchorInScreen(renderer, rect, objectPos);
-            if (anchorPoint != null)
-            {
-                payload["anchorPoint"] = anchorPoint;
-            }
-
-
-            var zOrders = GameObjectzOrders();
-            if (zOrders != null)
-            {
-                payload["zOrders"] = zOrders;
-
-            }
-            var clickable = GameObjectClickable(components);
-            payload["clickable"] = clickable;
-
-            var text = GameObjectText();
-            if (text != null)
-            {
-                payload["text"] = text;
-
-            }
-            var _components = components;
-            if (_components != null)
-            {
-                payload["components"] = _components;
-
-            }
-            var texture = GetImageSourceTexture();
-            if (texture != null)
-            {
-                payload["texture"] = texture;
-
-            }
-            var tag = GameObjectTag();
-            if (tag != null)
-            {
-                payload["tag"] = tag;
-
-            }
-            var _ilayer = GameObjectLayer();
-            if (_ilayer != null)
-            {
-                payload["_ilayer"] = _ilayer;
-
-            }
-            var layer = GameObjectLayerName();
-            if (layer != null)
-            {
-                payload["layer"] = layer;
-
-            }
-            var _instanceId = gameObject.GetInstanceID();
-            payload["_instanceId"] = _instanceId;
-
+          
             UWASDKAgent.PopSample();
             return payload;
         }
@@ -676,12 +630,6 @@ namespace Poco
                 return false;
             }
         }
-
-        public void setAttr(string attrName, object val)
-        {
-            throw new NotImplementedException();
-        }
-
 
     }
 
