@@ -8,18 +8,16 @@ namespace Poco
 {
 	public interface INodeGrabber
 	{
+		object GetAttr(string attrName);
+		//void setAttr(string attrName, object val);
 
-		object getAttr(string attrName);
-		void setAttr(string attrName, object val);
 
-		Dictionary<string, object> enumerateAttrs();
+		Dictionary<string, object> GetPayload();
 
+		//Dictionary<string, object> enumerateAttrs();
 		bool IsUIPanel(GameObject go);
 	}
 	 
-
-
-
 	public class RootNodeGrabber : Singleton<RootNodeGrabber>, INodeGrabber
 	{
 
@@ -27,27 +25,29 @@ namespace Poco
 			{ "name", "<Root>" },
 			{ "type", "Root" },
 			{ "visible", true },
-			{ "pos", new List<float> (){ 0.0f, 0.0f } },
-			{ "size", new List<float> (){ 0.0f, 0.0f } },
-			{ "scale", new List<float> (){ 1.0f, 1.0f } },
-			{ "anchorPoint", new List<float> (){ 0.5f, 0.5f } },
-			{ "zOrders", new Dictionary<string, object> (){ { "local", 0 }, { "global", 0 } } }
+			{ "pos", new float[2]{ 0.0f, 0.0f } },
+			{ "size", new float[2]{ 0.0f, 0.0f } },
+			{ "scale", new float[2]{ 1.0f, 1.0f } },
+			{ "anchorPoint", new float[2]{ 0.5f, 0.5f } },
+			{ "zOrders", new Dictionary<string, float> (){ { "local", 0 }, { "global", 0 } } }
 		};
 
+		//public Dictionary<string, object> enumerateAttrs()
+		//{
+		//	return rootAttrs;
+		//}
 
-
-		public Dictionary<string, object> enumerateAttrs()
-		{
-			return rootAttrs;
-		}
-
-
-        public object getAttr(string attrName)
+        public object GetAttr(string attrName)
         {
             throw new NotImplementedException();
         }
 
-        public bool IsUIPanel()
+        public Dictionary<string, object> GetPayload()
+        {
+			return rootAttrs;
+		}
+
+		public bool IsUIPanel()
         {
             throw new NotImplementedException();
         }
@@ -57,16 +57,9 @@ namespace Poco
             throw new NotImplementedException();
         }
 
-        public void setAttr(string attrName, object val)
-        {
-            throw new NotImplementedException();
-        }
-
-
-        //public virtual bool IsUINode()
+        //public void setAttr(string attrName, object val)
         //{
-
-        //	throw new NotImplementedException();
+        //    throw new NotImplementedException();
         //}
 
     }

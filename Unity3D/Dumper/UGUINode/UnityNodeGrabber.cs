@@ -30,7 +30,7 @@ namespace Poco
         public static string DefaultTypeName = "GameObject";
 
         //for optimization
-        static List<float> scale = new List<float>() { 1.0f, 1.0f };
+        static float[] scale = new float[2]{ 1.0f, 1.0f };
 
         private GameObject gameObject;
         private Renderer renderer;
@@ -76,7 +76,7 @@ namespace Poco
             components = GameObjectAllComponents();
         }
 
-        public object getAttr(string attrName)
+        public object GetAttr(string attrName)
         {
 
             UWASDKAgent.PushSample("UNodeOptmzd.getAttr");
@@ -141,18 +141,18 @@ namespace Poco
         }
 
 
-        public Dictionary<string, object> enumerateAttrs()
-        {
-            UWASDKAgent.PushSample("UNodeOptmzd.enumerateAttrs");
+        //public Dictionary<string, object> enumerateAttrs()
+        //{
+        //    UWASDKAgent.PushSample("UNodeOptmzd.enumerateAttrs");
 
-            Dictionary<string, object> payload = GetPayload();
+        //    Dictionary<string, object> payload = GetPayload();
 
-            UWASDKAgent.PopSample();
-            return payload;
-        }
+        //    UWASDKAgent.PopSample();
+        //    return payload;
+        //}
 
 
-        private Dictionary<string, object> GetPayload()
+        public Dictionary<string, object> GetPayload()
         {
             UWASDKAgent.PushSample("UNodeOptmzd.GetPayload");
 

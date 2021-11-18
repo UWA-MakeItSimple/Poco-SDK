@@ -17,12 +17,15 @@ namespace Poco
         {
             List<GameObject> firstLevelNodes = GetFirstLevelNodes();
 
-
             //CreateRoot
-            Dictionary<string, object> payload = RootNodeGrabber.Instance.enumerateAttrs();
+            Dictionary<string, object> payload = RootNodeGrabber.Instance.GetPayload();
+
             //Dictionary<string, object> result = new Dictionary<string, object>();
+
             Dictionary<string, object> result = DicPoolSO3.Ins.GetObj();
+
             object name = "";
+
             payload.TryGetValue("name", out name);
             result["name"] = name;
             result["payload"] = payload;
@@ -70,10 +73,8 @@ namespace Poco
                     return null;
             }
 
-
             //List<object> children = new List<object>();
             List<object> children = ListPool_object.Ins.GetObj();
-
             depth++;
 
             foreach (Transform trans in go.transform)
@@ -89,8 +90,8 @@ namespace Poco
 
 
             UnityNodeGrabber.Instance.GrabNode(go);
-            Dictionary<string, object> payload = UnityNodeGrabber.Instance.enumerateAttrs();
-            string name = (string)UnityNodeGrabber.Instance.getAttr("name");
+            Dictionary<string, object> payload = UnityNodeGrabber.Instance.GetPayload();
+            string name = (string)UnityNodeGrabber.Instance.GetAttr("name");
 
 
             //Dictionary<string, object> result = new Dictionary<string, object>();

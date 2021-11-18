@@ -1,5 +1,3 @@
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Poco;
 using System;
 using System.Collections.Generic;
@@ -18,7 +16,8 @@ namespace Poco
 
     public class PocoManager : MonoBehaviour
     {
-        public const string versionCode = "UWA-1.3";
+        //优化Json序列化部分
+        public const string versionCode = "UWA-1.4";
         public int port = 5001;
         private bool mRunning;
         public AsyncTcpServer server = null;
@@ -46,7 +45,56 @@ namespace Poco
         {
         }
 
+
+
 #if UNITY_EDITOR
+
+        string remoteCallMsg = "{\"method\": \"Dump\", \"params\": [true], \"jsonrpc\": \"2.0\", \"id\": \"10630993-7bd4-404c-b6b2-c99f8a26bb8f\"}";
+
+        private void OnGUI()
+        {
+            GUIStyle btnStyle = new GUIStyle("Button");
+            btnStyle.fontSize = 150;
+            GUILayout.BeginArea(new Rect(0, 0, 1920, 1080));
+
+            GUILayout.BeginVertical();
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button("DirectDump", btnStyle))
+            { 
+                //Config.Instance.pruningEnabled = true;
+                object result = Dump(new List<object> { true });
+
+                //JsonSerializerSettings settings = new JsonSerializerSettings()
+                //{
+                //    StringEscapeHandling = StringEscapeHandling.EscapeNonAscii
+
+                //};
+
+                string response = rpc.formatResponse("123", result);
+
+                string timeTag = DateTime.Now.ToString("dd-HHmmss");
+                using (System.IO.StreamWriter sw = new System.IO.StreamWriter("DumpData/DumpData-" + timeTag  + ".json"))
+                {
+                    sw.Write(response);
+                }
+
+
+                byte[] resBytes = System.Text.Encoding.Default.GetBytes(response);
+                UnityEngine.Debug.Log(((float)resBytes.Length) / 1024 / 1024);
+            }
+
+            if (GUILayout.Button("RpcDump", btnStyle))
+            {
+                string rst = rpc.HandleMessage(remoteCallMsg);
+                Debug.Log(rst);
+            }
+
+
+            GUILayout.EndVertical();
+            GUILayout.EndArea();
+        }
+
+#elif UWA_POCO_DEBUG
         private void OnGUI()
         {
             GUIStyle btnStyle = new GUIStyle("Button");
@@ -56,27 +104,27 @@ namespace Poco
             GUILayout.BeginVertical();
             GUILayout.FlexibleSpace();
             if (GUILayout.Button("Dump", btnStyle))
-            {
+            { 
+                //Config.Instance.pruningEnabled = true;
                 object result = Dump(new List<object> { true });
 
-                JsonSerializerSettings settings = new JsonSerializerSettings()
-                {
-                    StringEscapeHandling = StringEscapeHandling.EscapeNonAscii
+                //JsonSerializerSettings settings = new JsonSerializerSettings()
+                //{
+                //    StringEscapeHandling = StringEscapeHandling.EscapeNonAscii
 
-                };
-                settings.Formatting = Formatting.Indented;
+                //};
+                //settings.Formatting = Formatting.Indented;
+                string response = rpc.formatResponse("123", result);
 
-                string response = rpc.formatResponse("123", result, settings);
-
-                string timeTag = DateTime.Now.ToString("dd-HHmmss");
-                using (System.IO.StreamWriter sw = new System.IO.StreamWriter("DumpData/DumpData-" + timeTag + ".json"))
-                {
-                    sw.Write(response);
-                }
+                //string timeTag = DateTime.Now.ToString("dd-HHmmss");
+                //using (System.IO.StreamWriter sw = new System.IO.StreamWriter("DumpData/DumpData-" + timeTag +"-" +srlzr.GetType().Name + ".json"))
+                //{
+                //    sw.Write(response);
+                //}
 
 
-                byte[] resBytes = System.Text.Encoding.Default.GetBytes(response);
-                UnityEngine.Debug.Log(((float)resBytes.Length) / 1024 / 1024);
+                //byte[] resBytes = System.Text.Encoding.Default.GetBytes(response);
+                //UnityEngine.Debug.Log(((float)resBytes.Length) / 1024 / 1024);
             }
             GUILayout.EndVertical();
             GUILayout.EndArea();
@@ -186,7 +234,6 @@ namespace Poco
 
             if (dumper == null)
                 throw new Exception("Dumper has not been initialized");
-
 
 
             var onlyVisibleNode = true;
@@ -353,13 +400,6 @@ namespace Poco
 
             object result = Dump(new List<object> { true });
 
-            JsonSerializerSettings settings = new JsonSerializerSettings()
-            {
-                StringEscapeHandling = StringEscapeHandling.EscapeNonAscii
-
-            };
-            settings.Formatting = Formatting.Indented;
-
             return result;
 
         }
@@ -452,18 +492,22 @@ namespace Poco
         public delegate object RpcMethod(List<object> param);
 
         protected Dictionary<string, RpcMethod> RPCHandler = new Dictionary<string, RpcMethod>();
-        private JsonSerializerSettings settings = new JsonSerializerSettings()
-        {
-            StringEscapeHandling = StringEscapeHandling.EscapeNonAscii
-        };
+        //private JsonSerializerSettings settings = new JsonSerializerSettings()
+        //{
+        //    StringEscapeHandling = StringEscapeHandling.EscapeNonAscii
+        //};
 
         public string HandleMessage(string json)
         {
-            Debug.Log(json);
+            //Debug.Log(json);
 
             UWASDKAgent.PushSample("PocoManager.HandleMessage");
 
-            Dictionary<string, object> data = JsonConvert.DeserializeObject<Dictionary<string, object>>(json, settings);
+            //LitJson.JsonReader rd = new LitJson.JsonReader(json);
+
+            LitJson.JsonData data = LitJson.JsonMapper.ToObject(json);
+
+            
             if (data.ContainsKey("method"))
             {
 
@@ -478,29 +522,53 @@ namespace Poco
                 }
 
 
+                List<object> paramList = new List<object>();
 
-
-                List<object> param = null;
                 if (data.ContainsKey("params"))
                 {
-                    param = ((JArray)(data["params"])).ToObject<List<object>>();
+                    LitJson.JsonData json_params = data["params"];
+
+                    for(int i=0; i< json_params.Count; i++)
+                    {
+                        LitJson.JsonData json_para = json_params[i];
+                        if(json_para.IsBoolean)
+                        {
+                            bool tmp = (bool)(json_params[i]);
+                            paramList.Add(tmp);
+                        }
+                        else if (json_para.IsInt)
+                        {
+                            int tmp = (int)(json_params[i]);
+                            paramList.Add(tmp);
+                        }
+                        else if (json_para.IsDouble)
+                        {
+                            float tmp = (float)(double)(json_params[i]);
+                            paramList.Add(tmp);
+                        }
+                        else if(json_para.IsString)
+                        {
+                            string tmp = (string)(json_params[i]);
+                            paramList.Add(tmp);
+                        }
+                    }
                 }
 
                 object idAction = null;
                 if (data.ContainsKey("id"))
                 {
                     // if it have id, it is a request
-                    idAction = data["id"];
+                    idAction = data["id"].ToString();
                 }
 
-                LogUtil.ULogDev(string.Format("HandleMsg: Method-{0}, params-{1}, id-{2}", method, param, idAction));
+                LogUtil.ULogDev(string.Format("HandleMsg: Method-{0}, params-{1}, id-{2}", method, paramList, idAction));
 
                 string response = null;
                 object result = null;
                 try
                 {
                     
-                    result = RPCHandler[method](param);
+                    result = RPCHandler[method](paramList);
                 }
                 catch (Exception e)
                 {
@@ -539,14 +607,16 @@ namespace Poco
             data["method"] = method;
             if (param != null)
             {
-                data["params"] = JsonConvert.SerializeObject(param, settings);
+                //data["params"] = JsonConvert.SerializeObject(param, settings);
+                data["params"] = LitJson.JsonMapper.ToJson(param);
             }
             // if idAction is null, it is a notification
             if (idAction != null)
             {
                 data["id"] = idAction;
             }
-            return JsonConvert.SerializeObject(data, settings);
+            //return JsonConvert.SerializeObject(data, settings);
+            return JsonAgent.SerializeDic(data);
         }
 
         // Send a response from a request the server made to this client
@@ -557,56 +627,16 @@ namespace Poco
             rpc["jsonrpc"] = "2.0";
             rpc["id"] = idAction;
             rpc["result"] = result;
-            return JsonConvert.SerializeObject(rpc, settings);
+            //return Utf8Json.JsonSerializer.ToJsonString(rpc);
+            //return Newtonsoft.Json.JsonConvert.SerializeObject(rpc, settings);
+
+            //return Newtonsoft.Json.JsonConvert.SerializeObject(rpc);
+
+            return JsonAgent.SerializeDic(rpc); ;
+            //return JsonAgent.SerializeResponse(rpc);
         }
 
-        public string formatResponse(object idAction, object result, JsonSerializerSettings settings)
-        {
-            //Dictionary<string, object> rpc = new Dictionary<string, object>();
-            Dictionary<string, object> rpc = DicPoolSO3.Ins.GetObj();
-
-            rpc["jsonrpc"] = "2.0";
-            rpc["id"] = idAction;
-            rpc["result"] = result;
-            return JsonConvert.SerializeObject(rpc, settings);
-        }
-
-        // Send a error to the server from a request it made to this client
-        //public string formatResponseError(object idAction, IDictionary<string, object> data, Exception e)
-        //{
-        //    formatResponseError1(idAction, data, e);
-        //    return formatResponseError2(idAction, data, e);
-
-        //}
-
-        //public string formatResponseError1(object idAction, IDictionary<string, object> data, Exception e)
-        //{
-        //    Dictionary<string, object> rpc = new Dictionary<string, object>();
-
-        //    //Dictionary<string, object> rpc = DicPoolSO3.Ins.GetObj();
-
-        //    rpc["jsonrpc"] = "2.0";
-        //    rpc["id"] = idAction;
-
-        //    Dictionary<string, object> errorDefinition = new Dictionary<string, object>();
-        //    //Dictionary<string, object> errorDefinition = DicPoolSO3.Ins.GetObj();
-        //    errorDefinition["code"] = 1;
-        //    errorDefinition["message"] = e.ToString();
-
-        //    if (data != null)
-        //    {
-        //        errorDefinition["data"] = data;
-        //    }
-
-        //    rpc["error"] = errorDefinition;
-        //    string responseMsg = JsonConvert.SerializeObject(rpc, settings);
-
-        //    LogUtil.ULogDev(rpc["error"].ToString());
-        //    LogUtil.ULogDev("Error1-----:" + responseMsg);
-
-        //    return responseMsg;
-        //}
-
+        
         public string formatResponseError(object idAction, IDictionary<string, object> data, Exception e)
         {
             //Dictionary<string, object> rpc = new Dictionary<string, object>();
@@ -627,12 +657,9 @@ namespace Poco
             }
 
             rpc["error"] = errorDefinition;
-            string responseMsg = JsonConvert.SerializeObject(rpc, settings);
+            //return JsonConvert.SerializeObject(rpc, settings);
+            return JsonAgent.SerializeDic(rpc);
 
-            LogUtil.ULogDev(rpc["error"].ToString());
-            LogUtil.ULogDev("Error2-----:" + responseMsg);
-
-            return responseMsg;
         }
 
 
