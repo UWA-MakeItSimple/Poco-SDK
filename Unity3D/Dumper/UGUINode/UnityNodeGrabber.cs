@@ -184,7 +184,7 @@ namespace Poco
 
             foreach(var attrName in attrbutesNames)
             {
-                if(!Config.Instance.blackList.Contains(attrName))
+                if(!Config.Instance.blockedAttributes.Contains(attrName))
                 {
                     object attr = GetAttr(attrName);
                     if(attr!=null)
