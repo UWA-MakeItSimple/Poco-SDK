@@ -243,7 +243,6 @@ namespace Poco
             {
                 result = false;
             }
-            UWASDKAgent.PopSample();
             return result;
         }
 
