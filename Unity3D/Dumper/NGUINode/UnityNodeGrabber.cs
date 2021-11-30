@@ -130,6 +130,33 @@ namespace Poco
 
         private Camera GetCamera()
         {
+			// find the right camera when there are more than one UICamera
+
+            // find the UIRoot it belongs to
+			UIRoot root = this.gameObject.GetComponentInParent<UIRoot>();
+            if (root != null)
+            {
+                UICamera[] uicams = root.gameObject.GetComponentsInChildren<UICamera>();
+
+                // only one UICamera under UIRoot
+                if (uicams.Length == 1 && uicams[0].cachedCamera != null)
+                {
+					return uicams[0].cachedCamera;
+                }
+
+                // more than one UICamera under UIRoot, select according to the layerMask
+				if (uicams.Length > 1)
+				{
+					for (int i = 0; i < uicams.Length; i++)
+					{
+						if (uicams[i].cachedCamera != null && (uicams[i].cachedCamera.cullingMask & (1 << this.gameObject.layer) ) != 0)
+						{
+							return uicams[i].cachedCamera;
+						}
+					}
+				}
+            }
+			
             // it seems that NGUI has it own camera culling mask.
             // so we don't need to test within which camera a game object is visible
             return UICamera.currentCamera != null ? UICamera.currentCamera : UICamera.mainCamera;
