@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Poco
+
+class Config
 {
-    class Config
-    {
-        public static Config Instance = new Config();
+    public static Config Instance = new Config();
 
 #if UWA_POCO_DEBUG
         public bool pruningEnabled = true;
@@ -21,5 +20,4 @@ namespace Poco
         public HashSet<string> weakWhiteList = new HashSet<string>();
         public HashSet<string> strongWhiteList = new HashSet<string>();
         public HashSet<string> blockedAttributes = new HashSet<string>();
-    }
 }

@@ -5,7 +5,7 @@ using System;
 using System.Diagnostics;
 
 
-namespace Poco
+namespace Poco.Utils
 {
     public class UWASDKAgent
     {

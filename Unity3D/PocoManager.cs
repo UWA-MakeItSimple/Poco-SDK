@@ -6,13 +6,12 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Net.Sockets;
-using Poco.TcpServer;
+using TcpServer;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 using Poco.Utils;
 
-namespace Poco
-{
+
 
     public class PocoManager : MonoBehaviour
     {
@@ -666,6 +665,5 @@ namespace Poco
         public void addRpcMethod(string name, RpcMethod method)
         {
             RPCHandler[name] = method;
-        }
     }
 }

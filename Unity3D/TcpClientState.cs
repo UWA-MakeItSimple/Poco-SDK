@@ -1,7 +1,7 @@
 using System;
 using System.Net.Sockets;
 
-namespace Poco.TcpServer
+namespace TcpServer
 {
     /// <summary>
     /// Internal class to join the TCP client and buffer together
