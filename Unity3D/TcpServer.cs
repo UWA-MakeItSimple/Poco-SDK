@@ -10,7 +10,7 @@ using UnityEngine;
 using System.Threading.Tasks;
 using Poco.Utils;
 
-namespace TcpServer
+namespace Poco.TcpServer
 {
     public interface ProtoFilter
     {
