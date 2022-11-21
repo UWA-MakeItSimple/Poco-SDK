@@ -9,16 +9,18 @@ namespace Poco
 {
     public class UWASDKAgent
     {
-        [Conditional("POCO_UWA_PROFILER_ENABLE")]
         public static void PushSample(string sampleName)
         {
+#if POCO_UWA_PROFILER_ENABLE			
             UWAEngine.PushSample(sampleName);
+#endif
         }
 
-        [Conditional("POCO_UWA_PROFILER_ENABLE")]
         public static void PopSample()
         {
+#if POCO_UWA_PROFILER_ENABLE			
             UWAEngine.PopSample();
+#endif
         }
 
 
