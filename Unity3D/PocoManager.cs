@@ -10,13 +10,15 @@ using Poco.TcpServer;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 using Poco.Utils;
+using UJson = UWA.LitJson;
+
 
 namespace Poco
 {
 
     public class PocoManager : MonoBehaviour
     {
-        //ÓÅ»¯JsonÐòÁÐ»¯²¿·Ö
+        //ï¿½Å»ï¿½Jsonï¿½ï¿½ï¿½Ð»ï¿½ï¿½ï¿½ï¿½ï¿½
         public const string versionCode = "UWA-1.4";
         public int port = 5001;
         private bool mRunning;
@@ -505,7 +507,7 @@ namespace Poco
 
             //LitJson.JsonReader rd = new LitJson.JsonReader(json);
 
-            LitJson.JsonData data = LitJson.JsonMapper.ToObject(json);
+            UJson.JsonData data = UJson.JsonMapper.ToObject(json);
 
             
             if (data.ContainsKey("method"))
@@ -526,11 +528,11 @@ namespace Poco
 
                 if (data.ContainsKey("params"))
                 {
-                    LitJson.JsonData json_params = data["params"];
+                    UJson.JsonData json_params = data["params"];
 
                     for(int i=0; i< json_params.Count; i++)
                     {
-                        LitJson.JsonData json_para = json_params[i];
+                        UJson.JsonData json_para = json_params[i];
                         if(json_para.IsBoolean)
                         {
                             bool tmp = (bool)(json_params[i]);
@@ -608,7 +610,7 @@ namespace Poco
             if (param != null)
             {
                 //data["params"] = JsonConvert.SerializeObject(param, settings);
-                data["params"] = LitJson.JsonMapper.ToJson(param);
+                data["params"] = UJson.JsonMapper.ToJson(param);
             }
             // if idAction is null, it is a notification
             if (idAction != null)

@@ -4,6 +4,8 @@ using System.Text;
 using System.IO;
 using System.Linq;
 
+using UJson = UWA.LitJson;
+
 namespace Poco.Utils
 {
 
@@ -17,7 +19,7 @@ namespace Poco.Utils
         //General serializing method using ToJson()
         public static string SerializeDic(Dictionary<string, object> dic)
         {
-            string res = LitJson.JsonMapper.ToJson(dic);
+            string res = UJson.JsonMapper.ToJson(dic);
             return res;
 
         }
@@ -31,7 +33,7 @@ namespace Poco.Utils
         public static string SerializeDumpResponse(Dictionary<string, object> dic)
         {
 
-            LitJson.JsonWriter writer = new LitJson.JsonWriter(sb);
+            UJson.JsonWriter writer = new UJson.JsonWriter(sb);
             
             //writer.IndentValue = 2;
             //writer.PrettyPrint = true;
@@ -99,7 +101,7 @@ namespace Poco.Utils
         static string zOrdersKey = "zOrders";
 
 
-        static void SerializeNode(Dictionary<string, object> dic, LitJson.JsonWriter writer)
+        static void SerializeNode(Dictionary<string, object> dic, UJson.JsonWriter writer)
         {
             writer.WriteObjectStart();
 
