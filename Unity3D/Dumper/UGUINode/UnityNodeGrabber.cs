@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using UnityEngine.UI;
 using UnityEngine;
-
+using Poco.Utils;
 
 namespace Poco
 {
-    public class UnityNode : AbstractNode
+    public class UnityNodeGrabber : Singleton<UnityNodeGrabber> , INodeGrabber
     {
         public static Dictionary<string, string> TypeNames = new Dictionary<string, string>() {
             { "Text", "Text" },
@@ -28,6 +28,10 @@ namespace Poco
             { "RectTransform", "Node" },
         };
         public static string DefaultTypeName = "GameObject";
+
+        //for optimization
+        static float[] scale = new float[2]{ 1.0f, 1.0f };
+
         private GameObject gameObject;
         private Renderer renderer;
         private RectTransform rectTransform;
@@ -36,10 +40,19 @@ namespace Poco
         private List<string> components;
         private Camera camera;
 
+        public bool protectedByParent;
+        public string name;
 
-        public UnityNode(GameObject obj)
+        public UnityNodeGrabber()
+        {
+
+        }
+
+
+        public void GrabNode(GameObject obj)
         {
             gameObject = obj;
+            name = obj.name;
             camera = Camera.main;
             foreach (var cam in Camera.allCameras)
             {
@@ -63,104 +76,133 @@ namespace Poco
             components = GameObjectAllComponents();
         }
 
-        public override AbstractNode getParent()
+        public object GetAttr(string attrName)
         {
-            GameObject parentObj = gameObject.transform.parent.gameObject;
-            return new UnityNode(parentObj);
-        }
 
-        public override List<AbstractNode> getChildren()
-        {
-            List<AbstractNode> children = new List<AbstractNode>();
-            foreach (Transform child in gameObject.transform)
-            {
-                children.Add(new UnityNode(child.gameObject));
-            }
-            return children;
-        }
-
-        public override object getAttr(string attrName)
-        {
+            UWASDKAgent.PushSample("UNodeOptmzd.getAttr");
+            object result;
             switch (attrName)
             {
                 case "name":
-                    return gameObject.name;
+                    result = name;
+                    break;
                 case "type":
-                    return GuessObjectTypeFromComponentNames(components);
+                    result =  GuessObjectTypeFromComponentNames(components);
+                    break;
                 case "visible":
-                    return GameObjectVisible(renderer, components);
+                    result = GameObjectVisible(renderer, components);
+                    break;
                 case "pos":
-                    return GameObjectPosInScreen(objectPos, renderer, rectTransform, rect);
+                    result = GameObjectPosInScreen(objectPos, renderer, rectTransform, rect);
+                    break;
                 case "size":
-                    return GameObjectSizeInScreen(rect, rectTransform);
+                    result = GameObjectSizeInScreen(rect, rectTransform);
+                    break;
                 case "scale":
-                    return new List<float>() { 1.0f, 1.0f };
+                    result = scale;
+                    break;
                 case "anchorPoint":
-                    return GameObjectAnchorInScreen(renderer, rect, objectPos);
+                    result = GameObjectAnchorInScreen(renderer, rect, objectPos);
+                    break;
+
                 case "zOrders":
-                    return GameObjectzOrders();
+                    result = GameObjectzOrders();
+                    break;
                 case "clickable":
-                    return GameObjectClickable(components);
+                    result = GameObjectClickable(components);
+                    break;
                 case "text":
-                    return GameObjectText();
+                    result = GameObjectText();
+                    break;
                 case "components":
-                    return components;
+                    result = components;
+                    break;
                 case "texture":
-                    return GetImageSourceTexture();
+                    result = GetImageSourceTexture();
+                    break;
                 case "tag":
-                    return GameObjectTag();
+                    result = GameObjectTag();
+                    break;
                 case "layer":
-                    return GameObjectLayerName();
+                    result = GameObjectLayerName();
+                    break;
                 case "_ilayer":
-                    return GameObjectLayer();
+                    result = GameObjectLayer();
+                    break;
                 case "_instanceId":
-                    return gameObject.GetInstanceID();
+                    result = gameObject.GetInstanceID();
+                    break;
                 default:
-                    return null;
+                    result = null;
+                    break;
             }
+            UWASDKAgent.PopSample();
+            return result;
         }
 
 
-        public override Dictionary<string, object> enumerateAttrs()
+        //public Dictionary<string, object> enumerateAttrs()
+        //{
+        //    UWASDKAgent.PushSample("UNodeOptmzd.enumerateAttrs");
+
+        //    Dictionary<string, object> payload = GetPayload();
+
+        //    UWASDKAgent.PopSample();
+        //    return payload;
+        //}
+
+
+
+        private List<string> attrbutesNames = new List<string>
         {
-            Dictionary<string, object> payload = GetPayload();
-            Dictionary<string, object> ret = new Dictionary<string, object>();
-            foreach (KeyValuePair<string, object> p in payload)
+            "name",
+            "type",
+            "visible",
+            "pos",
+            "size",
+            "scale",
+            "anchorPoint",
+            "zOrders",
+            "clickable",
+            "text",
+            "components",
+            "texture",
+            "tag",
+            "_ilayer",
+            "layer",
+            "_instanceId"
+        };
+
+
+
+        public Dictionary<string, object> GetPayload()
+        {
+            UWASDKAgent.PushSample("UNodeOptmzd.GetPayload");
+
+            //Dictionary<string, object> payload = new Dictionary<string, object>();
+            Dictionary<string, object> payload = DicPoolSO16.Ins.GetObj();
+
+            foreach(var attrName in attrbutesNames)
             {
-                if (p.Value != null)
+                if(!Config.Instance.blockedAttributes.Contains(attrName))
                 {
-                    ret.Add(p.Key, p.Value);
+                    object attr = GetAttr(attrName);
+                    if(attr!=null)
+                    {
+                        payload[attrName] = attr;
+                    }
                 }
             }
-            return ret;
-        }
 
-
-        private Dictionary<string, object> GetPayload()
-        {
-            Dictionary<string, object> payload = new Dictionary<string, object>() {
-                { "name", gameObject.name },
-                { "type", GuessObjectTypeFromComponentNames (components) },
-                { "visible", GameObjectVisible (renderer, components) },
-                { "pos", GameObjectPosInScreen (objectPos, renderer, rectTransform, rect) },
-                { "size", GameObjectSizeInScreen (rect, rectTransform) },
-                { "scale", new List<float> (){ 1.0f, 1.0f } },
-                { "anchorPoint", GameObjectAnchorInScreen (renderer, rect, objectPos) },
-                { "zOrders", GameObjectzOrders () },
-                { "clickable", GameObjectClickable (components) },
-                { "text", GameObjectText () },
-                { "components", components },
-                { "texture", GetImageSourceTexture () },
-                { "tag", GameObjectTag () },
-                { "_ilayer", GameObjectLayer() },
-                { "layer", GameObjectLayerName() },
-                { "_instanceId", gameObject.GetInstanceID () },
-            };
+          
+            UWASDKAgent.PopSample();
             return payload;
         }
 
         private string GuessObjectTypeFromComponentNames(List<string> components)
         {
+            UWASDKAgent.PushSample("UNodeOptmzd.GuessObjectTypeFromComponentNames");
+
             List<string> cns = new List<string>(components);
             cns.Reverse();
             foreach (string name in cns)
@@ -170,11 +212,47 @@ namespace Poco
                     return TypeNames[name];
                 }
             }
+            UWASDKAgent.PopSample();
             return DefaultTypeName;
         }
 
+
+        public static bool GameObjectVisible(GameObject go)
+        {
+            bool result;
+
+            if (go.activeInHierarchy)
+            {
+                bool light = go.GetComponent<Light>() != null;
+                // bool mesh = components.Contains ("MeshRenderer") && components.Contains ("MeshFilter");
+                bool particle = go.GetComponent<ParticleSystem>() != null && go.GetComponent<ParticleSystemRenderer>() != null ;
+                if (light || particle)
+                {
+                    result = false;
+                }
+                else
+                {
+                    Renderer rdr = go.GetComponent<Renderer>();
+                    if (rdr != null)
+                        result = rdr.isVisible;
+                    else
+                        result = true;
+                }
+            }
+            else
+            {
+                result = false;
+            }
+            return result;
+        }
+
+
+
+
         private bool GameObjectVisible(Renderer renderer, List<string> components)
         {
+            UWASDKAgent.PushSample("UNodeOptmzd.GameObjectVisible");
+            bool result;
             if (gameObject.activeInHierarchy)
             {
                 bool light = components.Contains("Light");
@@ -182,17 +260,20 @@ namespace Poco
                 bool particle = components.Contains("ParticleSystem") && components.Contains("ParticleSystemRenderer");
                 if (light || particle)
                 {
-                    return false;
+                    result = false;
                 }
                 else
                 {
-                    return renderer ? renderer.isVisible : true;
+                    result = renderer ? renderer.isVisible : true;
                 }
             }
             else
             {
-                return false;
+                result = false;
             }
+            UWASDKAgent.PopSample();
+            return result;
+
         }
 
         private int GameObjectLayer()
@@ -232,7 +313,8 @@ namespace Poco
 
         private List<string> GameObjectAllComponents()
         {
-            List<string> components = new List<string>();
+            //List<string> components = new List<string>();
+            List<string> components = ListPool_str.Ins.GetObj();
             Component[] allComponents = gameObject.GetComponents<Component>();
             if (allComponents != null)
             {
@@ -254,10 +336,11 @@ namespace Poco
             {
                 CameraViewportPoint = Math.Abs(camera.WorldToViewportPoint(gameObject.transform.position).z);
             }
-            Dictionary<string, float> zOrders = new Dictionary<string, float>() {
-                { "global", 0f },
-                { "local", -1 * CameraViewportPoint }
-            };
+            Dictionary<string, float> zOrders = DicPoolSF2.Ins.GetObj();
+            
+            zOrders["global"] = 0f;
+            zOrders["local"] = -1 * CameraViewportPoint;
+
             return zOrders;
         }
 
@@ -277,6 +360,8 @@ namespace Poco
 
         private float[] GameObjectPosInScreen(Vector3 objectPos, Renderer renderer, RectTransform rectTransform, Rect rect)
         {
+            UWASDKAgent.PushSample("UNodeOptmzd.GameObjectPosInScreen");
+
             float[] pos = { 0f, 0f };
 
             if (renderer)
@@ -323,6 +408,7 @@ namespace Poco
                         break;
                 }
             }
+            UWASDKAgent.PopSample();
             return pos;
         }
 
@@ -359,6 +445,8 @@ namespace Poco
 
         private float[] GameObjectSizeInScreen(Rect rect, RectTransform rectTransform)
         {
+            UWASDKAgent.PushSample("UNodeOptmzd.GameObjectSizeInScreen");
+
             float[] size = { 0f, 0f };
             if (rectTransform)
             {
@@ -387,6 +475,7 @@ namespace Poco
             {
                 size = new float[] { rect.width / (float)Screen.width, rect.height / (float)Screen.height };
             }
+            UWASDKAgent.PopSample();
             return size;
         }
 
@@ -510,5 +599,49 @@ namespace Poco
             }
             return false;
         }
+        //public override bool IsUINode()
+        //{
+
+        //    if (gameObject.layer == LayerMask.NameToLayer("UI"))
+        //    {
+        //        Debug.Log("LayerUI:  " + gameObject.name);
+        //        return true;
+        //    }
+
+        //    if(gameObject.GetComponent<RectTransform>()!=null)
+        //    {
+        //        return true;
+        //    }
+
+
+        //    return false;
+        //}
+
+
+        public bool IsUIPanel(GameObject go)
+        {
+            if (go.GetComponent<Canvas>() != null)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
     }
+
+    static class GameObjectExtension
+    {
+        public static bool HasUIInChildren(this GameObject go)
+        {
+            Component[] comps = go.GetComponentsInChildren<Canvas>();
+            if (comps.Length > 0)
+                return true;
+            else
+                return false;
+        }
+    }
+
 }

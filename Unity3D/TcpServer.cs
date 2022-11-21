@@ -59,12 +59,13 @@ namespace Poco.TcpServer
         public List<string> swap_msgs()
         {
             List<string> ret = msgs;
-            msgs = new List<string>();
+            msgs = new List<string>(5);
             return ret;
         }
 
         public byte[] pack(String content)
         {
+            UWASDKAgent.PushSample("TcpServer.pack");
             LogUtil.ULogDev("Pack Msg");
 
             int len = content.Length;
@@ -76,6 +77,8 @@ namespace Poco.TcpServer
             }
             byte[] body = System.Text.Encoding.Default.GetBytes(content);
             byte[] ret = Combine(size, body);
+
+            UWASDKAgent.PopSample();
             return ret;
         }
 
@@ -423,6 +426,7 @@ namespace Poco.TcpServer
         /// <param name="datagram">报文</param>
         public void Send(TcpClient tcpClient, byte[] datagram)
         {
+            UWASDKAgent.PushSample("TcpServer.SendAsync");
             LogUtil.ULogDev("Send Method");
 
             GuardRunning();
@@ -439,14 +443,15 @@ namespace Poco.TcpServer
                 if (stream.CanWrite)
                 {
                     LogUtil.ULogDev("DataSize to Send:  " + ((float)datagram.Length /1024/1024));
-                    //stream.BeginWrite(datagram, 0, datagram.Length, HandleDatagramWritten, tcpClient);
 
+                    //stream.BeginWrite(datagram, 0, datagram.Length, HandleDatagramWritten, tcpClient);
+       
 
                     Task.Factory.StartNew(
                         () => NetworkWriteAsync(stream, datagram, 0, datagram.Length)
                         );
-                    LogUtil.ULogDev("NetworkWriteAsync thread start");
 
+                    LogUtil.ULogDev("NetworkWriteAsync thread start");
 
                 }
             }
@@ -454,6 +459,7 @@ namespace Poco.TcpServer
             {
                 Debug.LogException(ex);
             }
+            UWASDKAgent.PopSample();
         }
 
 
@@ -476,7 +482,7 @@ namespace Poco.TcpServer
                 {
                     sb.Append(hashBytes[i].ToString("X2"));
                 }
-                Debug.Log(sb.ToString());
+                Debug.Log("[ UWA_POCO_DEBUG ] MD5 Hash: " + sb.ToString());
             }
 #endif
 
@@ -513,7 +519,6 @@ namespace Poco.TcpServer
             }
 
 
-
         }
 
         /// <summary>
@@ -523,6 +528,8 @@ namespace Poco.TcpServer
         /// <param name="datagram">报文</param>
         public void Send(TcpClient tcpClient, string datagram)
         {
+            Debug.Log(datagram);
+
             Send(tcpClient, this.Encoding.GetBytes(datagram));
         }
 
@@ -556,6 +563,8 @@ namespace Poco.TcpServer
             try
             {
                 ((TcpClient)ar.AsyncState).GetStream().EndWrite(ar);
+				Debug.Log("HandleDatagramWritten EndWrite(ar)");
+                Debug.Log(ar.IsCompleted);
             }
             catch (ObjectDisposedException ex)
             {

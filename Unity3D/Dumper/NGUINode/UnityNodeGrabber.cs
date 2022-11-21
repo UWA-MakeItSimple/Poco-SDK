@@ -2,11 +2,12 @@ using System;
 using System.Collections.Generic;
 using UnityEngine.UI;
 using UnityEngine;
+using Poco.Utils;
 
 
 namespace Poco
 {
-    public class UnityNode : AbstractNode
+    public class UnityNodeGrabber : Singleton<UnityNodeGrabber>, INodeGrabber
     {
         public static Dictionary<string, string> TypeNames = new Dictionary<string, string>() {
             { "UI2DSprite", "UI2DSprite" },
@@ -40,9 +41,18 @@ namespace Poco
         private Vector2 objectPos;
         private List<string> components;
 
-        public UnityNode(GameObject obj)
+        public string name;
+        public bool protectedByParent = false;
+
+        public UnityNodeGrabber()
+        {
+
+        }
+
+        public void GrabNode(GameObject obj)
         {
             gameObject = obj;
+            name = obj.name;
             camera = GetCamera();
             bounds = NGUIMath.CalculateAbsoluteWidgetBounds(gameObject.transform);
             rect = BoundsToScreenSpace(bounds);
@@ -50,23 +60,23 @@ namespace Poco
             components = GameObjectAllComponents();
         }
 
-        public override AbstractNode getParent()
-        {
-            GameObject parentObj = gameObject.transform.parent.gameObject;
-            return new UnityNode(parentObj);
-        }
+        //public override AbstractNode getParent()
+        //{
+        //    GameObject parentObj = gameObject.transform.parent.gameObject;
+        //    return new UnityNodeOptimized(parentObj);
+        //}
 
-        public override List<AbstractNode> getChildren()
-        {
-            List<AbstractNode> children = new List<AbstractNode>();
-            foreach (Transform child in gameObject.transform)
-            {
-                children.Add(new UnityNode(child.gameObject));
-            }
-            return children;
-        }
+        //public override List<AbstractNode> getChildren()
+        //{
+        //    List<AbstractNode> children = new List<AbstractNode>();
+        //    foreach (Transform child in gameObject.transform)
+        //    {
+        //        children.Add(new UnityNodeOptimized(child.gameObject));
+        //    }
+        //    return children;
+        //}
 
-        public override object getAttr(string attrName)
+        public object GetAttr(string attrName)
         {
             switch (attrName)
             {
@@ -104,45 +114,90 @@ namespace Poco
 
         }
 
-        public override Dictionary<string, object> enumerateAttrs()
-        {
-            Dictionary<string, object> payload = GetPayload();
-            Dictionary<string, object> ret = new Dictionary<string, object>();
-            foreach (KeyValuePair<string, object> p in payload)
-            {
-                if (p.Value != null)
-                {
-                    ret.Add(p.Key, p.Value);
-                }
-            }
-            return ret;
-        }
+        //public override Dictionary<string, object> enumerateAttrs()
+        //{
+        //    Dictionary<string, object> payload = GetPayload();
+        //    Dictionary<string, object> ret = new Dictionary<string, object>();
+        //    foreach (KeyValuePair<string, object> p in payload)
+        //    {
+        //        if (p.Value != null)
+        //        {
+        //            ret.Add(p.Key, p.Value);
+        //        }
+        //    }
+        //    return ret;
+        //}
 
         private Camera GetCamera()
         {
+			// find the right camera when there are more than one UICamera
+
+            // find the UIRoot it belongs to
+			UIRoot root = this.gameObject.GetComponentInParent<UIRoot>();
+            if (root != null)
+            {
+                UICamera[] uicams = root.gameObject.GetComponentsInChildren<UICamera>();
+
+                // only one UICamera under UIRoot
+                if (uicams.Length == 1 && uicams[0].cachedCamera != null)
+                {
+					return uicams[0].cachedCamera;
+                }
+
+                // more than one UICamera under UIRoot, select according to the layerMask
+				if (uicams.Length > 1)
+				{
+					for (int i = 0; i < uicams.Length; i++)
+					{
+						if (uicams[i].cachedCamera != null && (uicams[i].cachedCamera.cullingMask & (1 << this.gameObject.layer) ) != 0)
+						{
+							return uicams[i].cachedCamera;
+						}
+					}
+				}
+            }
+			
             // it seems that NGUI has it own camera culling mask.
             // so we don't need to test within which camera a game object is visible
             return UICamera.currentCamera != null ? UICamera.currentCamera : UICamera.mainCamera;
         }
 
-        private Dictionary<string, object> GetPayload()
+        private List<string> attrbutesNames = new List<string>
         {
-            Dictionary<string, object> payload = new Dictionary<string, object>() {
-                { "name", gameObject.name },
-                { "type", GuessObjectTypeFromComponentNames (components) },
-                { "visible", GameObjectVisible (components) },
-                { "pos", GameObjectPosInScreen (objectPos) },
-                { "size", GameObjectSizeInScreen (rect) },
-                { "scale", new List<float> (){ 1.0f, 1.0f } },
-                { "anchorPoint", GameObjectAnchorInScreen (rect, objectPos) },
-                { "zOrders", GameObjectzOrders () },
-                { "clickable", GameObjectClickable () },
-                { "text", GameObjectText () },
-                { "components", components },
-                { "texture", GetImageSourceTexture () },
-                { "tag", GameObjectTag () },
-                { "_instanceId", gameObject.GetInstanceID() },
-            };
+            "name",
+            "type",
+            "visible",
+            "pos",
+            "size",
+            "scale",
+            "anchorPoint",
+            "zOrders",
+            "clickable",
+            "text",
+            "components",
+            "texture",
+            "tag",
+            "_instanceId"
+        };
+
+
+        public Dictionary<string, object> GetPayload()
+        {
+
+            Dictionary<string, object> payload = DicPoolSO16.Ins.GetObj();
+
+            foreach (var attrName in attrbutesNames)
+            {
+                if (!Config.Instance.blockedAttributes.Contains(attrName))
+                {
+                    object attr = GetAttr(attrName);
+                    if (attr != null)
+                    {
+                        payload[attrName] = attr;
+                    }
+                }
+            }
+
             return payload;
         }
 
@@ -175,6 +230,41 @@ namespace Poco
                 return false;
             }
         }
+
+        public static bool GameObjectVisible(GameObject go)
+        {
+            bool result;
+
+            if (go.activeInHierarchy)
+            {
+                bool drawcall = go.GetComponent<UIDrawCall>() != null;
+
+                bool light = go.GetComponent<Light>() != null;
+                // bool mesh = components.Contains ("MeshRenderer") && components.Contains ("MeshFilter");
+                bool particle = go.GetComponent<ParticleSystem>() != null && go.GetComponent<ParticleSystemRenderer>() != null;
+                if (light || particle || drawcall)
+                {
+                    result = false;
+                }
+                else
+                {
+                    Renderer rdr = go.GetComponent<Renderer>();
+                    if (rdr != null)
+                        result = rdr.isVisible;
+                    else
+                        result = true;
+                }
+            }
+            else
+            {
+                result = false;
+            }
+            return result;
+        }
+
+
+
+
 
         private bool GameObjectClickable()
         {
@@ -336,6 +426,62 @@ namespace Poco
                 }
             }
             return false;
+        }
+
+        //public override bool IsUINode()
+        //{
+
+
+        //    if (gameObject.GetComponent<RectTransform>() != null)
+        //    {
+        //        return true;
+        //    }
+
+        //    if (gameObject.layer == LayerMask.NameToLayer("UI"))
+        //    {
+        //        Debug.Log("LayerUI:  " + gameObject.name);
+        //        return true;
+        //    }
+
+
+        //    return false;
+        //}
+
+        public bool IsUIPanel(GameObject go)
+        {
+            if (go.GetComponent<UIPanel>() != null)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public bool IsUIPanel()
+        {
+            if (gameObject.GetComponent<UIPanel>() != null)
+            {
+                return true;
+
+            }
+            else
+            {
+                return false;
+            }
+        }
+    }
+
+    static class GameObjectExtension
+    {
+        public static bool HasUIInChildren(this GameObject go)
+        {
+            Component[] comps = go.GetComponentsInChildren<UIPanel>();
+            if (comps.Length > 0)
+                return true;
+            else
+                return false;
         }
     }
 }
