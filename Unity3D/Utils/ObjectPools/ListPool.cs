@@ -29,7 +29,7 @@ namespace Poco.Utils
         }
 
 
-        public List<T> GetObj(int size)
+        public override List<T> GetObj(int size)
         {
             _state = State.Used;
 
@@ -55,7 +55,7 @@ namespace Poco.Utils
         {
             _state = State.Released;
 
-            UnityEngine.Debug.Log("ListPool usedObjects count: " + usedObjects.Count);
+            //LogUtil.ULogDev("ListPool usedObjects count: " + usedObjects.Count);
             foreach (var obj in usedObjects)
             {
                 obj.Clear();

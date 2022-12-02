@@ -5,7 +5,7 @@ using Poco.Utils;
 
 namespace Poco
 {
-    public class UnityDumper : Singleton<UnityDumper>, IDumper<GameObject>
+    public class UnityDumper : Poco.Utils.Singleton<UnityDumper>, IDumper<GameObject>
     {
 
         public UnityDumper()
@@ -54,7 +54,7 @@ namespace Poco
         {
             UWASDKAgent.PushSample("UDmpOptmzd.dumpHImpl(node,only,pBP)");
 
-            LogUtil.ULogDev("UnityDmpOptimized.dumpHierarchyImpl");
+            //LogUtil.ULogDev("UnityDmpOptimized.dumpHierarchyImpl");
 
             if (go == null)
             {

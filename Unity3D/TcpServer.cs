@@ -46,6 +46,8 @@ namespace Poco.TcpServer
                     
                     byte[] data_body = Slice(buf, HEADER_SIZE, data_size + HEADER_SIZE);
                     string content = System.Text.Encoding.Default.GetString(data_body);
+                    LogUtil.ULogDev(content);
+
                     msgs.Add(content);
                     buf = Slice(buf, data_size + HEADER_SIZE, buf.Length);
                 }
@@ -58,12 +60,14 @@ namespace Poco.TcpServer
 
         public List<string> swap_msgs()
         {
+            LogUtil.ULogDev("SimpleProtocolFilter.swap_msgs");
+
             List<string> ret = msgs;
             msgs = new List<string>(5);
             return ret;
         }
 
-        public byte[] pack(String content)
+        public byte[] pack(String content, out int dataSize)
         {
             UWASDKAgent.PushSample("TcpServer.pack");
             LogUtil.ULogDev("Pack Msg");
@@ -76,13 +80,25 @@ namespace Poco.TcpServer
                 Array.Reverse(size);
             }
             byte[] body = System.Text.Encoding.Default.GetBytes(content);
-            byte[] ret = Combine(size, body);
+
+            dataSize = size.Length + body.Length;
+            LogUtil.ULogDev("Body Size to send:" + dataSize);
+
+            byte[] ret = CombineOptimized(size, body);
 
             UWASDKAgent.PopSample();
             return ret;
         }
 
-        private static byte[] Combine(byte[] first, byte[] second)
+        private static byte[] CombineOptimized(byte[] first, byte[] second)
+        {
+            byte[] buf = SendBufManager.Ins.GetBuf(first.Length+second.Length);
+            Buffer.BlockCopy(first, 0, buf, 0, first.Length);
+            Buffer.BlockCopy(second, 0, buf, first.Length, second.Length);
+            return buf;
+        }
+
+        public static byte[] Combine(byte[] first, byte[] second)
         {
             byte[] ret = new byte[first.Length + second.Length];
             Buffer.BlockCopy(first, 0, ret, 0, first.Length);
@@ -90,7 +106,7 @@ namespace Poco.TcpServer
             return ret;
         }
 
-        public byte[] Slice(byte[] source, int start, int end)
+        public static byte[] Slice(byte[] source, int start, int end)
         {
             int length = end - start;
             byte[] ret = new byte[length];
@@ -140,6 +156,8 @@ namespace Poco.TcpServer
         /// <param name="listenPort">监听的端口</param>
         public AsyncTcpServer(IPAddress localIPAddress, int listenPort)
         {
+            LogUtil.ULogDev("AsyncTcpServer.Ctor Port: " + listenPort);
+
             this.Address = localIPAddress;
             this.Port = listenPort;
             this.Encoding = Encoding.Default;
@@ -184,7 +202,7 @@ namespace Poco.TcpServer
         /// <returns>异步TCP服务器</returns>
         public AsyncTcpServer Start()
         {
-            Debug.Log("start server");
+            Debug.Log("AsyncTcpServer.start server");
             return Start(10);
         }
 
@@ -261,6 +279,11 @@ namespace Poco.TcpServer
 
         private void HandleTcpClientAccepted(IAsyncResult ar)
         {
+
+            LogUtil.ULogDev("[UWA_Poco_Debug]HandleTcpClientAccepted======================");
+
+
+
             if (!IsRunning)
                 return;
 
@@ -269,6 +292,10 @@ namespace Poco.TcpServer
             TcpClient tcpClient = tcpListener.EndAcceptTcpClient(ar);
             if (!tcpClient.Connected)
                 return;
+
+            LogUtil.ULogDev(tcpClient.Client.RemoteEndPoint.ToString());
+            LogUtil.ULogDev(tcpClient.Client.LocalEndPoint.ToString());
+            LogUtil.ULogDev(tcpClient.Client.AddressFamily.ToString());
 
             byte[] buffer = new byte[tcpClient.ReceiveBufferSize];
             SimpleProtocolFilter prot = new SimpleProtocolFilter();
@@ -295,6 +322,9 @@ namespace Poco.TcpServer
             if (!IsRunning)
                 return;
 
+            LogUtil.ULogDev("HandleDatagramReceived======================");
+
+
             try
             {
                 TcpClientState internalClient = (TcpClientState)ar.AsyncState;
@@ -316,12 +346,18 @@ namespace Poco.TcpServer
                     numberOfReadBytes = 0;
                 }
 
+                LogUtil.ULogDev("[UWA_Poco_Debug]HandleDatagramReceived numberOfReadBytes: " + numberOfReadBytes);
+
+
                 if (numberOfReadBytes == 0)
                 {
                     // connection has been closed
                     TcpClientState internalClientToBeThrowAway;
                     string tcpClientKey = internalClient.TcpClient.Client.RemoteEndPoint.ToString();
                     _clients.TryRemove(tcpClientKey, out internalClientToBeThrowAway);
+
+                    LogUtil.ULogDev("numberOfReadBytes == 0");
+                    //Thread.Sleep(100);
                     RaiseClientDisconnected(internalClient.TcpClient);
                     return;
                 }
@@ -424,7 +460,7 @@ namespace Poco.TcpServer
         /// </summary>
         /// <param name="tcpClient">客户端</param>
         /// <param name="datagram">报文</param>
-        public void Send(TcpClient tcpClient, byte[] datagram)
+        public void Send(TcpClient tcpClient, byte[] datagramBuf, int dataSize)
         {
             UWASDKAgent.PushSample("TcpServer.SendAsync");
             LogUtil.ULogDev("Send Method");
@@ -433,7 +469,7 @@ namespace Poco.TcpServer
             if (tcpClient == null)
                 throw new ArgumentNullException("tcpClient");
 
-            if (datagram == null)
+            if (datagramBuf == null)
                 throw new ArgumentNullException("datagram");
 
             try
@@ -442,15 +478,17 @@ namespace Poco.TcpServer
                 
                 if (stream.CanWrite)
                 {
-                    LogUtil.ULogDev("DataSize to Send:  " + ((float)datagram.Length /1024/1024));
+                    LogUtil.ULogDev("TcpServer::Send: DataSize to send:  " + ((float)dataSize / 1024/1024));
 
                     //stream.BeginWrite(datagram, 0, datagram.Length, HandleDatagramWritten, tcpClient);
        
 
-                    Task.Factory.StartNew(
-                        () => NetworkWriteAsync(stream, datagram, 0, datagram.Length)
+                    Task t = Task.Factory.StartNew(
+                        () => NetworkWriteAsync(stream, datagramBuf, 0, dataSize)
                         );
+                    
 
+                    
                     LogUtil.ULogDev("NetworkWriteAsync thread start");
 
                 }
@@ -462,6 +500,49 @@ namespace Poco.TcpServer
             UWASDKAgent.PopSample();
         }
 
+
+        /// <summary>
+        /// 发送报文至指定的客户端
+        /// </summary>
+        /// <param name="tcpClient">客户端</param>
+        /// <param name="datagram">报文</param>
+        public void Send(TcpClient tcpClient, byte[] datagramBuf)
+        {
+            UWASDKAgent.PushSample("TcpServer.SendAsync");
+            LogUtil.ULogDev("Send Method");
+
+            GuardRunning();
+            if (tcpClient == null)
+                throw new ArgumentNullException("tcpClient");
+
+            if (datagramBuf == null)
+                throw new ArgumentNullException("datagram");
+
+            try
+            {
+                NetworkStream stream = tcpClient.GetStream();
+
+                if (stream.CanWrite)
+                {
+                    LogUtil.ULogDev("DataSize to Send:  " + ((float)datagramBuf.Length / 1024 / 1024));
+
+                    //stream.BeginWrite(datagram, 0, datagram.Length, HandleDatagramWritten, tcpClient);
+                    Task t = Task.Factory.StartNew(
+                        () => NetworkWriteAsync(stream, datagramBuf, 0, datagramBuf.Length)
+                        );
+
+
+
+                    LogUtil.ULogDev("NetworkWriteAsync thread start");
+
+                }
+            }
+            catch (ObjectDisposedException ex)
+            {
+                Debug.LogException(ex);
+            }
+            UWASDKAgent.PopSample();
+        }
 
         public static int tmpBufSize = 2 * 1024 * 1024;
         public static int sleepTime = 500;
@@ -510,13 +591,17 @@ namespace Poco.TcpServer
 #if UWA_POCO_DEBUG
                     Debug.Log(sentSize.ToString() + " / " + buffer.Length);
 #endif
-                    stream.Write(buffer, tmpBufSize * cnt, buffer.Length - sentSize);
+                    stream.Write(buffer, tmpBufSize * cnt, size - sentSize);
                     sentSize += buffer.Length - sentSize;
                     cnt++;
                     break;
                 }
 
             }
+
+            LogUtil.ULogDev("Send Finish");
+
+            SendBufManager.Ins.ReleaseBuf(buffer);
 
 
         }
@@ -688,5 +773,102 @@ namespace Poco.TcpServer
         }
 
         #endregion
+    }
+}
+
+
+class SendBufManager
+{
+    //Dictionary<List<byte>, bool> bufPool = new Dictionary<List<byte>, bool>(2);
+    public static SendBufManager Ins = new SendBufManager();
+
+    static int DefaultSize = 1024 * 512;
+
+    public int DefaultCapacity = 2;
+    public int ObjCount = 0;
+
+    protected HashSet<byte[]> freshObjects;
+    protected HashSet<byte[]> usedObjects;
+
+    private static Mutex mutex = new Mutex();
+
+    //Buffer: objects
+    //Buffer: used objects
+
+    public SendBufManager()
+    {
+        freshObjects = new HashSet<byte[]>();
+        usedObjects = new HashSet<byte[]>();
+        for (int i = 0; i < 2; i++)
+        {
+            byte[] buf = new byte[DefaultSize];
+            freshObjects.Add(buf);
+        }
+    }
+
+    public byte[] GetBuf(int size)
+    {
+        mutex.WaitOne();
+
+        byte[] buf = null;
+        if (freshObjects.Count == 0)
+        {
+            byte[] tmp = new byte[size];
+            usedObjects.Add(tmp);
+            ObjCount++;
+            buf = tmp;
+        }
+        else
+        {
+            foreach(var tmp in freshObjects)
+            {
+                if(tmp.Length >= size)
+                {
+                    freshObjects.Remove(tmp);
+                    usedObjects.Add(tmp);
+                    buf = tmp;
+                    break;
+                }
+            }
+
+            if(buf == null)
+            {
+                byte[] tmp = new byte[size];
+                usedObjects.Add(tmp);
+                ObjCount++;
+                buf = tmp;
+            }
+        }
+        mutex.ReleaseMutex();
+        return buf;
+    }
+
+
+
+    public void ReleaseBuf(byte[] buf)
+    {
+        LogUtil.ULogDev("ReleaseBuf");
+
+        mutex.WaitOne();
+
+
+        if (usedObjects.Contains(buf) )
+        {
+            usedObjects.Remove(buf);
+            freshObjects.Add(buf);
+        }
+        else
+        {
+            throw new Exception("Release Buf exception");
+        }
+        mutex.ReleaseMutex();
+        LogUtil.ULogDev("ReleaseBuf End");
+
+    }
+
+
+    public void ReleaseAll()
+    {
+        throw new NotImplementedException();
     }
 }

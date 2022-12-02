@@ -74,10 +74,21 @@ namespace Poco
 
                 string response = rpc.formatResponse("123", result);
 
+
+                int dataSize = 0;
+                byte[] bytes = prot.pack(response, out dataSize);
+
+                int len = response.Length;
+                byte[] size = BitConverter.GetBytes(len);
+                byte[] unpackedData = Poco.TcpServer.SimpleProtocolFilter.Slice(bytes, size.Length, bytes.Length);
+                string unpackedString = System.Text.Encoding.Default.GetString(unpackedData);
+                UnityEngine.Debug.Log(unpackedData);
+
+
                 string timeTag = DateTime.Now.ToString("dd-HHmmss");
                 using (System.IO.StreamWriter sw = new System.IO.StreamWriter("DumpData/DumpData-" + timeTag  + ".json"))
                 {
-                    sw.Write(response);
+                    sw.Write(unpackedString);
                 }
 
 
@@ -425,10 +436,11 @@ namespace Poco
 
                     var t1 = sw.ElapsedMilliseconds;
 
-                    byte[] bytes = prot.pack(response);
+                    int dataSize = 0;
+                    byte[] bytes = prot.pack(response, out dataSize);
                     var t2 = sw.ElapsedMilliseconds;
 
-                    server.Send(client.TcpClient, bytes);
+                    server.Send(client.TcpClient, bytes, dataSize);
                     var t3 = sw.ElapsedMilliseconds;
 
                     debugProfilingData["handleRpcRequest"] = t1 - t0;

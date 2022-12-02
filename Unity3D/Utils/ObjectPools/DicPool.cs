@@ -18,7 +18,7 @@ namespace Poco.Utils
 
             if (freshObjects.Count == 0)
             {
-                LogUtil.ULogDev("freshObjects.Count == 0");
+                //LogUtil.ULogDev("freshObjects.Count == 0");
                 Dictionary<K, V> obj = new Dictionary<K, V>(DefaultContainerSize);
                 usedObjects.Add(obj);
                 ObjCount++;
@@ -26,13 +26,37 @@ namespace Poco.Utils
             }
             else
             {
-                LogUtil.ULogDev("freshObjects.Count != 0");
+                //LogUtil.ULogDev("freshObjects.Count != 0");
 
                 Dictionary<K, V> obj = freshObjects.Pop();
                 usedObjects.Add(obj);
                 return obj;
             }
         }
+
+        public override Dictionary<K, V> GetObj(int size)
+        {
+            _state = State.Used;
+
+            if (freshObjects.Count == 0)
+            {
+                //LogUtil.ULogDev("freshObjects.Count == 0");
+                Dictionary<K, V> obj = new Dictionary<K, V>(size);
+                usedObjects.Add(obj);
+                ObjCount++;
+                return obj;
+            }
+            else
+            {
+                //LogUtil.ULogDev("freshObjects.Count != 0");
+
+                Dictionary<K, V> obj = freshObjects.Pop();
+                usedObjects.Add(obj);
+                return obj;
+            }
+        }
+
+
 
 
         //public Dictionary<K, V> GetObj(int size)
@@ -66,7 +90,7 @@ namespace Poco.Utils
         {
             _state = State.Released;
 
-            UnityEngine.Debug.Log("DicPool usedObjects count: " + usedObjects.Count);
+            //LogUtil.ULogDev("DicPool usedObjects count: " + usedObjects.Count);
             foreach (var obj in usedObjects)
             {
                 obj.Clear();

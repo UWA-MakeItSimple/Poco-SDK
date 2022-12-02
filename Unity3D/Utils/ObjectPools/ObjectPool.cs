@@ -38,6 +38,16 @@ namespace Poco.Utils
         }
 
         public abstract T GetObj();
+        public abstract T GetObj(int size);
+   
+
+
+
+        public void ReleaseObj(T obj)
+        {
+            usedObjects.Remove(obj);
+            freshObjects.Push(obj);
+        }
 
         //Clear and restore
         //public abstract void RestoreObj(T obj);
@@ -49,7 +59,7 @@ namespace Poco.Utils
             {
                 throw new Exception("Pool has not been released");
             }
-
+            
             _state = State.Fresh;
         }
 
