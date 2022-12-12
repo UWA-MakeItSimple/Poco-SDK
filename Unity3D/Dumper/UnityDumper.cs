@@ -18,7 +18,7 @@ namespace Poco
             List<GameObject> firstLevelNodes = GetFirstLevelNodes();
 
             //CreateRoot
-            Dictionary<string, object> payload = RootNodeGrabber.Instance.GetPayload();
+            Dictionary<string, object> payload = RootNodeGrabber.Instance.GetPayload(null);
 
             //Dictionary<string, object> result = new Dictionary<string, object>();
 
@@ -89,8 +89,8 @@ namespace Poco
             }
 
 
-            UnityNodeGrabber.Instance.GrabNode(go);
-            Dictionary<string, object> payload = UnityNodeGrabber.Instance.GetPayload();
+            //UnityNodeGrabber.Instance.GrabNode(go);
+            Dictionary<string, object> payload = UnityNodeGrabber.Instance.GetPayload(go);
             string name = (string)UnityNodeGrabber.Instance.GetAttr("name");
 
 
