@@ -7,16 +7,31 @@ namespace Poco.Utils
     public class HierarchyTranslator
     {
         static StringBuilder sb = new StringBuilder();
+
+        
+
         public static string HierarchyToStr(Dictionary<string, object> h)
         {
+            string result;
+
+            if(sb == null)
+            {
+                sb = new StringBuilder();
+            }
+
             sb.Clear();
-            DfsToStr(sb, h);
-            return sb.ToString();
+            //Utf8ValueStringBuilder sb = ZString.CreateUtf8StringBuilder();
+            //StringBuilder sb = new StringBuilder();
+            {
+                DfsToStr(sb, h);
+                
+            }
+            result = sb.ToString();
+            return result;
         }
 
 
 
-        static string node_start = "{{";
 
         private static bool DfsToStr(StringBuilder sb, Dictionary<string, object> nodeDic)
         {
@@ -66,28 +81,25 @@ namespace Poco.Utils
 
             if (chldList != null && chldList.Count != 0)
             {
-                sb.Append(",[");
-                int childCnt = 0;
-                for(int i=0;i< chldList.Count; i++)
+                if (chldList[0] != null)
                 {
-                    object o = chldList[i];
-                    
-                    bool got_subnode = DfsToStr(sb, (Dictionary<string, object>)o);
-                    if(got_subnode)
+                    sb.Append(",[");
+                    int childCnt = 0;
+                    for (int i = 0; i < chldList.Count; i++)
                     {
-                        childCnt++;
-                        if(i!=chldList.Count-1) sb.Append(",");
-                    }
-                }
+                        object o = chldList[i];
 
-                if(childCnt > 0)
-                {
+                        bool got_subnode = DfsToStr(sb, (Dictionary<string, object>)o);
+                        if (got_subnode)
+                        {
+                            childCnt++;
+                            if (i != chldList.Count - 1) sb.Append(",");
+                        }
+                    }
+
                     sb.Append("]");
                 }
-                else
-                {
-                    sb.Remove(sb.Length - 2, 2);
-                }
+                
             }
 
             sb.Append("}");
@@ -96,22 +108,21 @@ namespace Poco.Utils
         }
 
 
-        private static StringBuilder AppendFloatArr(StringBuilder m_sb, float[] arr)
+        private static void AppendFloatArr(StringBuilder m_sb, float[] arr)
         {
 
             if (arr==null||arr.Length !=2)
             {
-                return null;
+                return;
             }
             m_sb.AppendFormat("[{0},{1}]", arr[0], arr[1]);
 
 
-            return m_sb;
         }
 
-        private static StringBuilder AppendQuotationStr(StringBuilder m_sb, string str)
+        private static void AppendQuotationStr(StringBuilder m_sb, string str)
         {
-            return m_sb.AppendFormat("\"{0}\"", str);
+            m_sb.AppendFormat("\"{0}\"", str);
         }
 
     }
