@@ -8,25 +8,25 @@ namespace Poco
 {
     public class UnityNodeGrabber : Poco.Utils.Singleton<UnityNodeGrabber> , INodeGrabber
     {
-        //public static Dictionary<string, string> TypeNames = new Dictionary<string, string>() {
-        //    { "Text", "Text" },
-        //    { "Gradient Text", "Gradient.Text" },
-        //    { "Image", "Image" },
-        //    { "RawImage", "Raw.Image" },
-        //    { "Mask", "Mask" },
-        //    { "2DRectMask", "2D-Rect.Mask" },
-        //    { "Button", "Button" },
-        //    { "InputField", "InputField" },
-        //    { "Toggle", "Toggle" },
-        //    { "Toggle Group", "ToggleGroup" },
-        //    { "Slider", "Slider" },
-        //    { "ScrollBar", "ScrollBar" },
-        //    { "DropDown", "DropDown" },
-        //    { "ScrollRect", "ScrollRect" },
-        //    { "Selectable", "Selectable" },
-        //    { "Camera", "Camera" },
-        //    { "RectTransform", "Node" },
-        //};
+        public static Dictionary<string, string> TypeNames = new Dictionary<string, string>() {
+            { "Text", "Text" },
+            { "Gradient Text", "Gradient.Text" },
+            { "Image", "Image" },
+            { "RawImage", "Raw.Image" },
+            { "Mask", "Mask" },
+            { "2DRectMask", "2D-Rect.Mask" },
+            { "Button", "Button" },
+            { "InputField", "InputField" },
+            { "Toggle", "Toggle" },
+            { "Toggle Group", "ToggleGroup" },
+            { "Slider", "Slider" },
+            { "ScrollBar", "ScrollBar" },
+            { "DropDown", "DropDown" },
+            { "ScrollRect", "ScrollRect" },
+            { "Selectable", "Selectable" },
+            { "Camera", "Camera" },
+            { "RectTransform", "Node" },
+        };
         public static string DefaultTypeName = "GameObject";
 
         //for optimization
@@ -37,7 +37,7 @@ namespace Poco
         private RectTransform rectTransform;
         private Rect rect;
         private Vector2 objectPos;
-        //private List<string> components;
+        private List<string> components;
         private Camera camera;
 
         public bool protectedByParent;
@@ -87,10 +87,10 @@ namespace Poco
                     result = name;
                     break;
                 case "type":
-                    result =  GuessObjectType();
+                    result =  GuessObjectTypeFromComponentNames(components);
                     break;
                 case "visible":
-                    result = GameObjectVisible();
+                    result = GameObjectVisible(gameObject, renderer, components);
                     break;
                 case "pos":
                     result = GameObjectPosInScreen(objectPos, renderer, rectTransform, rect);
@@ -109,13 +109,13 @@ namespace Poco
                     result = GameObjectzOrders();
                     break;
                 case "clickable":
-                    result = GameObjectClickable();
+                    result = GameObjectClickable(components);
                     break;
                 case "text":
                     result = GameObjectText();
                     break;
                 case "components":
-                    result = GameObjectAllComponents();
+                    result = components;
                     break;
                 case "texture":
                     result = GetImageSourceTexture();
@@ -175,7 +175,7 @@ namespace Poco
 
 
         bool newItem = false;
-        public Dictionary<string, object> GetPayload(GameObject go)
+        public Dictionary<string, object> GetPayload(GameObject go, List<string> components, Renderer renderer)
         {
 
             UWASDKAgent.PushSample("UNodeOptmzd.GetPayload");
@@ -199,11 +199,11 @@ namespace Poco
                     camera = cam;
                 }
             }
-
+            this.renderer = renderer;
             rectTransform = gameObject.GetComponent<RectTransform>();
             rect = GameObjectRect(renderer, rectTransform);
             objectPos = renderer ? WorldToGUIPoint(camera, renderer.bounds.center) : Vector2.zero;
-            
+            this.components = components;
 
 
 
@@ -228,49 +228,19 @@ namespace Poco
             return payload;
         }
 
-        private string GuessObjectType()
+        private string GuessObjectTypeFromComponentNames(List<string> components)
         {
-            UWASDKAgent.PushSample("UNodeOptmzd.GuessObjectType");
+            UWASDKAgent.PushSample("UNodeOptmzd.GuessObjectTypeFromComponentNames");
 
-            //List<string> cns = new List<string>(components);
-            //cns.Reverse();
-            //{ "Text", "Text" },
-            //{ "Gradient Text", "Gradient.Text" },
-            //{ "Image", "Image" },
-            //{ "RawImage", "Raw.Image" },
-            //{ "Mask", "Mask" },
-            //{ "2DRectMask", "2D-Rect.Mask" },
-            //{ "Button", "Button" },
-            //{ "InputField", "InputField" },
-            //{ "Toggle", "Toggle" },
-            //{ "Toggle Group", "ToggleGroup" },
-            //{ "Slider", "Slider" },
-            //{ "ScrollBar", "ScrollBar" },
-            //{ "DropDown", "DropDown" },
-            //{ "ScrollRect", "ScrollRect" },
-            //{ "Selectable", "Selectable" },
-            //{ "Camera", "Camera" },
-            //{ "RectTransform", "Node" },
-            
-            if (gameObject.GetComponent<Text>() != null) return "Text";
-            //if (gameObject.GetComponent<GradientText> () != null) return "Gradient Text"; ?
-            if (gameObject.GetComponent<UnityEngine.UI.Image>() != null) return "Image";
-            if (gameObject.GetComponent<UnityEngine.UI.RawImage>() != null) return "RawImage";
-            if (gameObject.GetComponent<Mask>() != null) return "Mask";
-            if (gameObject.GetComponent<RectMask2D> () != null) return "2D-Rect.Mask";
-            if (gameObject.GetComponent<Button>() != null) return "Button";
-            if (gameObject.GetComponent<InputField>() != null) return "InputField";
-            if (gameObject.GetComponent<Toggle>() != null) return "Toggle";
-            if (gameObject.GetComponent<ToggleGroup> () != null) return "ToggleGroup";
-            if (gameObject.GetComponent<Slider>() != null) return "Slider";
-            if (gameObject.GetComponent<Scrollbar>() != null) return "ScrollBar";
-            if (gameObject.GetComponent<Dropdown>() != null) return "DropDown";
-            if (gameObject.GetComponent<ScrollRect>() != null) return "ScrollRect";
-            if (gameObject.GetComponent<Selectable>() != null) return "Selectable";
-            if (gameObject.GetComponent<Camera>() != null) return "Camera";
-            if (gameObject.GetComponent<RectTransform>() != null) return "RectTransform";
-
-
+            List<string> cns = new List<string>(components);
+            cns.Reverse();
+            foreach (string name in cns)
+            {
+                if (TypeNames.ContainsKey(name))
+                {
+                    return TypeNames[name];
+                }
+            }
             UWASDKAgent.PopSample();
             return DefaultTypeName;
         }
@@ -308,19 +278,15 @@ namespace Poco
 
 
 
-        private bool GameObjectVisible()
+        public static bool GameObjectVisible(GameObject go, Renderer renderer, List<string> components)
         {
-
             UWASDKAgent.PushSample("UNodeOptmzd.GameObjectVisible");
-            renderer = gameObject.GetComponent<Renderer>();
-
             bool result;
-
-            if (gameObject.activeInHierarchy)
+            if (go.activeInHierarchy)
             {
-                bool light = gameObject.GetComponent<Light>() != null;
+                bool light = components.Contains("Light");
                 // bool mesh = components.Contains ("MeshRenderer") && components.Contains ("MeshFilter");
-                bool particle = (gameObject.GetComponent<ParticleSystem>() != null) && (gameObject.GetComponent<ParticleSystemRenderer>() != null); 
+                bool particle = components.Contains("ParticleSystem") && components.Contains("ParticleSystemRenderer");
                 if (light || particle)
                 {
                     result = false;
@@ -348,7 +314,7 @@ namespace Poco
             return LayerMask.LayerToName(gameObject.layer);
         }
 
-        private bool GameObjectClickable()
+        private bool GameObjectClickable(List<string> components)
         {
             Button button = gameObject.GetComponent<Button>();
             return button ? button.isActiveAndEnabled : false;
@@ -374,20 +340,18 @@ namespace Poco
             return tag;
         }
 
-        private List<string> GameObjectAllComponents()
+        public List<string> GameObjectAllComponents(GameObject tmpGo)
         {
             //List<string> components = new List<string>();
             List<string> components = ListPool_str.Ins.GetObj();
-            Component[] allComponents = gameObject.GetComponents<Component>();
+            Component[] allComponents = tmpGo.GetComponents<Component>();
             if (allComponents != null)
             {
                 foreach (Component ac in allComponents)
                 {
-                    
                     if (ac != null)
                     {
-                        //components.Add(ac.GetType().Name);
-                        components.Add(ac.name);
+                        components.Add(ac.GetType().Name);
                     }
                 }
             }
@@ -695,6 +659,10 @@ namespace Poco
             }
         }
 
+        public Dictionary<string, object> GetPayload(GameObject go)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     static class GameObjectExtension

@@ -73,6 +73,17 @@ namespace Poco
                     return null;
             }
 
+            Renderer renderer = go.GetComponent<Renderer>();
+
+            //由于IsVisible一定要获取，而通过GetAllComponents来得到IsVisible又是最优的，所以将components也作为必须获取的项。
+            List<string> components =UnityNodeGrabber.Instance.GameObjectAllComponents(go);
+            if (onlyVisibleNode && !UnityNodeGrabber.GameObjectVisible(go, renderer, components))
+            {
+                return null;
+            }
+            
+
+
             //List<object> children = new List<object>();
             List<object> children = ListPool_object.Ins.GetObj();
             depth++;
@@ -80,7 +91,7 @@ namespace Poco
             foreach (Transform trans in go.transform)
             {
                 GameObject child = trans.gameObject;
-                if (!onlyVisibleNode || UnityNodeGrabber.GameObjectVisible(child) )
+                //if (!onlyVisibleNode || UnityNodeGrabber.GameObjectVisible(child) )
                 {
                     var childResult = dfsDump(child, onlyVisibleNode, protectChildren, depth);
                     if (childResult != null)
@@ -90,7 +101,7 @@ namespace Poco
 
 
             //UnityNodeGrabber.Instance.GrabNode(go);
-            Dictionary<string, object> payload = UnityNodeGrabber.Instance.GetPayload(go);
+            Dictionary<string, object> payload = UnityNodeGrabber.Instance.GetPayload(go, components, renderer);
             string name = (string)UnityNodeGrabber.Instance.GetAttr("name");
 
 

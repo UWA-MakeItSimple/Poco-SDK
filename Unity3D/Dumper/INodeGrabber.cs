@@ -11,7 +11,7 @@ namespace Poco
 		object GetAttr(string attrName);
 		//void setAttr(string attrName, object val);
 
-
+		Dictionary<string, object> GetPayload(GameObject go, List<string> components, Renderer renderer);
 		Dictionary<string, object> GetPayload(GameObject go);
 
 		//Dictionary<string, object> enumerateAttrs();
@@ -47,7 +47,12 @@ namespace Poco
 			return rootAttrs;
 		}
 
-		public bool IsUIPanel()
+        public Dictionary<string, object> GetPayload(GameObject go, List<string> components, Renderer renderer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool IsUIPanel()
         {
             throw new NotImplementedException();
         }
