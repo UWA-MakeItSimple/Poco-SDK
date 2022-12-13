@@ -83,23 +83,23 @@ namespace Poco
                 //string unpackedString = System.Text.Encoding.Default.GetString(unpackedData);
                 //UnityEngine.Debug.Log(unpackedData);
 
-                string timeTag = DateTime.Now.ToString("dd-HHmmss");
-                using (System.IO.StreamWriter sw = new System.IO.StreamWriter("DumpData/DumpData-" + timeTag  + ".json"))
-                {
-                    sw.Write(result);
-                }
-                UnityEngine.Debug.Log(result);
+                //string timeTag = DateTime.Now.ToString("dd-HHmmss");
+                //using (System.IO.StreamWriter sw = new System.IO.StreamWriter("DumpData/DumpData-" + timeTag  + ".json"))
+                //{
+                //    sw.Write(result);
+                //}
+                //UnityEngine.Debug.Log(result);
 
 
 
 
-               Dictionary<string,object> dic =  Deserialize.StrToDic(result);
-                string res2 = Poco.Utils.HierarchyTranslator.HierarchyToStr(dic);
-                using (System.IO.StreamWriter sw = new System.IO.StreamWriter("DumpData/DumpData-" + timeTag + "2.json"))
-                {
-                    sw.Write(res2);
-                }
-                UnityEngine.Debug.Log(res2);
+               //Dictionary<string,object> dic =  Deserialize.StrToDic(result);
+               // string res2 = Poco.Utils.HierarchyTranslator.HierarchyToStr(dic);
+               // using (System.IO.StreamWriter sw = new System.IO.StreamWriter("DumpData/DumpData-" + timeTag + "2.json"))
+               // {
+               //     sw.Write(res2);
+               // }
+               // UnityEngine.Debug.Log(res2);
 
                 //byte[] resBytes = System.Text.Encoding.Default.GetBytes(response);
                 //UnityEngine.Debug.Log(((float)resBytes.Length) / 1024 / 1024);

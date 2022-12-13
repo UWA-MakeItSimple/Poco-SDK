@@ -1,39 +1,65 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Text;
 namespace Poco.Utils
 {
     public class HierarchyTranslator
     {
+        static StringBuilder sb;
         public static string HierarchyToStr(Dictionary<string, object> h)
         {
-
-            return DfsToStr(h);
+            sb = new StringBuilder();
+            sb = DfsToStr(h);
+            return sb.ToString();
         }
 
 
 
+        static string node_start = "{{";
 
-        private static string DfsToStr(Dictionary<string, object> nodeDic)
+        private static StringBuilder DfsToStr(Dictionary<string, object> nodeDic)
         {
             if (nodeDic == null || nodeDic.Count == 0)
             {
                 return null;
             }
 
-            string left = "{{";
+            StringBuilder left_sb = new StringBuilder(node_start);
 
             Dictionary<string, object> objPayload = nodeDic["payload"] as Dictionary<string, object>;
 
-            string name = QuotationStr(objPayload["name"].ToString());
-            string visible = QuotationStr(objPayload["visible"].ToString());
-            string pos = FloatArrToStr((float[])objPayload["pos"]);
-            string size = FloatArrToStr((float[])objPayload["size"]);
-            string anchorPoint = FloatArrToStr((float[])objPayload["anchorPoint"]);
+            AppendQuotationStr(left_sb, objPayload["name"].ToString());
+            left_sb.Append(",");
 
-            left = left + name + "," + visible + "," + pos + "," + size + "," + anchorPoint + "}";
+            AppendQuotationStr(left_sb, objPayload["visible"].ToString());
+            left_sb.Append(",");
+
+            AppendFloatArr(left_sb, (float[])objPayload["pos"]);
+            left_sb.Append(",");
+
+            AppendFloatArr(left_sb, (float[])objPayload["size"]);
+            left_sb.Append(",");
+
+            AppendFloatArr(left_sb, (float[])objPayload["anchorPoint"]);
+            left_sb.Append("}");
+
+
+            //left_sb.AppendFormat("{0},{1},{2},{3},{4}}", name, visible, pos, size, anchorPoint);
+
+            //left_sb.Append(name_sb);
+            //left_sb.Append(",");
+            //left_sb.Append(visible_sb);
+            //left_sb.Append(",");
+            //left_sb.Append(pos_sb);
+            //left_sb.Append(",");
+            //left_sb.Append(size_sb);
+            //left_sb.Append(",");
+            //left_sb.Append(anchorPoint_sb);
+            
 
             object childListObj = null;
+
 
             nodeDic.TryGetValue("children", out childListObj);
 
@@ -41,59 +67,50 @@ namespace Poco.Utils
 
             if (chldList != null && chldList.Count != 0)
             {
-                string childLeft = ",[";
+                StringBuilder childLeft_sb = new StringBuilder(",[");
                 int childCnt = 0;
                 for(int i=0;i< chldList.Count; i++)
                 {
                     object o = chldList[i];
 
-                    string childStr = DfsToStr((Dictionary<string, object>)o);
-                    if(childStr!=null)
+                    StringBuilder childStr_sb = DfsToStr((Dictionary<string, object>)o);
+                    if(childStr_sb != null && childStr_sb.Length!=0)
                     {
                         childCnt++;
-                        if (i != 0) childLeft += ",";
-                        childLeft += childStr;
+                        if (i != 0) childLeft_sb.Append(",");
+                        childLeft_sb.Append(childStr_sb);
                     }
                 }
 
                 if(childCnt > 0)
                 {
-                    string childRight = "]";
-                    left = left + childLeft + childRight;
+                    left_sb.Append(childLeft_sb);
+                    left_sb.Append("]");
                 }
             }
 
-            string right = "}";
-            return left + right;
+            left_sb.Append("}");
+            return left_sb;
 
         }
 
 
-        private static string FloatArrToStr(float[] arr)
+        private static StringBuilder AppendFloatArr(StringBuilder m_sb, float[] arr)
         {
-            if(arr==null||arr.Length == null)
+
+            if (arr==null||arr.Length !=2)
             {
                 return null;
             }
+            m_sb.AppendFormat("[{0},{1}]", arr[0], arr[1]);
 
-            string left = "[";
-            for(int i=0; i<arr.Length; i++)
-            {
-                if (i != 0) left += ",";
 
-                left += arr[i].ToString();
-            }
-
-            string right = "]";
-            return left + right;
+            return m_sb;
         }
 
-        private static string QuotationStr(string str)
+        private static StringBuilder AppendQuotationStr(StringBuilder m_sb, string str)
         {
-            string left = "\"";
-            string right = left;
-            left += str;
-            return left + right;
+            return m_sb.AppendFormat("\"{0}\"", str);
         }
 
     }
