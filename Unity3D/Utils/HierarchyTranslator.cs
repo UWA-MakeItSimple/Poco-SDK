@@ -6,11 +6,11 @@ namespace Poco.Utils
 {
     public class HierarchyTranslator
     {
-        static StringBuilder sb;
+        static StringBuilder sb = new StringBuilder();
         public static string HierarchyToStr(Dictionary<string, object> h)
         {
-            sb = new StringBuilder();
-            sb = DfsToStr(h);
+            sb.Clear();
+            DfsToStr(sb, h);
             return sb.ToString();
         }
 
@@ -18,31 +18,31 @@ namespace Poco.Utils
 
         static string node_start = "{{";
 
-        private static StringBuilder DfsToStr(Dictionary<string, object> nodeDic)
+        private static bool DfsToStr(StringBuilder sb, Dictionary<string, object> nodeDic)
         {
             if (nodeDic == null || nodeDic.Count == 0)
             {
-                return null;
+                return false;
             }
 
-            StringBuilder left_sb = new StringBuilder(node_start);
+            sb.Append("{{");
 
             Dictionary<string, object> objPayload = nodeDic["payload"] as Dictionary<string, object>;
 
-            AppendQuotationStr(left_sb, objPayload["name"].ToString());
-            left_sb.Append(",");
+            AppendQuotationStr(sb, objPayload["name"].ToString());
+            sb.Append(",");
 
-            AppendQuotationStr(left_sb, objPayload["visible"].ToString());
-            left_sb.Append(",");
+            AppendQuotationStr(sb, objPayload["visible"].ToString());
+            sb.Append(",");
 
-            AppendFloatArr(left_sb, (float[])objPayload["pos"]);
-            left_sb.Append(",");
+            AppendFloatArr(sb, (float[])objPayload["pos"]);
+            sb.Append(",");
 
-            AppendFloatArr(left_sb, (float[])objPayload["size"]);
-            left_sb.Append(",");
+            AppendFloatArr(sb, (float[])objPayload["size"]);
+            sb.Append(",");
 
-            AppendFloatArr(left_sb, (float[])objPayload["anchorPoint"]);
-            left_sb.Append("}");
+            AppendFloatArr(sb, (float[])objPayload["anchorPoint"]);
+            sb.Append("}");
 
 
             //left_sb.AppendFormat("{0},{1},{2},{3},{4}}", name, visible, pos, size, anchorPoint);
@@ -60,37 +60,38 @@ namespace Poco.Utils
 
             object childListObj = null;
 
-
             nodeDic.TryGetValue("children", out childListObj);
 
             List<object> chldList = childListObj as List<object>;
 
             if (chldList != null && chldList.Count != 0)
             {
-                StringBuilder childLeft_sb = new StringBuilder(",[");
+                sb.Append(",[");
                 int childCnt = 0;
                 for(int i=0;i< chldList.Count; i++)
                 {
                     object o = chldList[i];
-
-                    StringBuilder childStr_sb = DfsToStr((Dictionary<string, object>)o);
-                    if(childStr_sb != null && childStr_sb.Length!=0)
+                    
+                    bool got_subnode = DfsToStr(sb, (Dictionary<string, object>)o);
+                    if(got_subnode)
                     {
                         childCnt++;
-                        if (i != 0) childLeft_sb.Append(",");
-                        childLeft_sb.Append(childStr_sb);
+                        if(i!=chldList.Count-1) sb.Append(",");
                     }
                 }
 
                 if(childCnt > 0)
                 {
-                    left_sb.Append(childLeft_sb);
-                    left_sb.Append("]");
+                    sb.Append("]");
+                }
+                else
+                {
+                    sb.Remove(sb.Length - 2, 2);
                 }
             }
 
-            left_sb.Append("}");
-            return left_sb;
+            sb.Append("}");
+            return true;
 
         }
 
