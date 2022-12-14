@@ -15,7 +15,23 @@ namespace Poco
         /// 一键开启或关闭剪枝功能
         /// </summary>
         public bool pruningEnabled = false;
+        public bool optimizeDataEnabled = false;
 #endif
+
+
+        Config()
+        {
+            AttrCannotBlock.Add("name");
+            AttrCannotBlock.Add("visible");
+            AttrCannotBlock.Add("pos");
+            AttrCannotBlock.Add("size");
+            AttrCannotBlock.Add("anchorPoint");
+            AttrCannotBlock.Add("text");
+        }
+
+        public HashSet<string> AttrCannotBlock = new HashSet<string>();
+
+
 
         public HashSet<string> blackList = new HashSet<string>();
         public HashSet<string> weakWhiteList = new HashSet<string>();

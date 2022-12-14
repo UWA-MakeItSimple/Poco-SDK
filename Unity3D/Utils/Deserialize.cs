@@ -199,6 +199,8 @@ namespace Poco.Utils
         //    return strList;
         //}
 
+        public static HashSet<string> blockAttrs = new HashSet<string> {  };
+
         /// <summary>
         /// Start End 遵循左闭右开原则
         /// </summary>
@@ -226,11 +228,26 @@ namespace Poco.Utils
 
             Dictionary<string, object> payloadDic = new Dictionary<string, object>();
 
-            payloadDic["name"] = TrimQuatation(payloadList[0]);
-            payloadDic["visible"] = StrToBool(payloadList[1]);
-            payloadDic["pos"] = StrToFloatArr(payloadList[2]);
-            payloadDic["size"] = StrToFloatArr(payloadList[3]);
-            payloadDic["anchorPoint"] = StrToFloatArr(payloadList[4]);
+            int attrCnt = 0;
+            if (!blockAttrs.Contains("name"))
+            {
+                payloadDic["name"] = TrimQuatation(payloadList[attrCnt++]);
+            }
+            if (!blockAttrs.Contains("visible"))
+                payloadDic["visible"] = StrToBool(payloadList[attrCnt++]);
+
+            if (!blockAttrs.Contains("pos"))
+                payloadDic["pos"] = StrToFloatArr(payloadList[attrCnt++]);
+
+            if (!blockAttrs.Contains("size"))
+                payloadDic["size"] = StrToFloatArr(payloadList[attrCnt++]);
+
+            if (!blockAttrs.Contains("anchorPoint"))
+                payloadDic["anchorPoint"] = StrToFloatArr(payloadList[attrCnt++]);
+
+            if (!blockAttrs.Contains("zOrders"))
+                payloadDic["zOrders"] = StrToZOrdersDic(payloadList[attrCnt++]);
+
             nodeDic["name"] = TrimQuatation(payloadList[0]);
             nodeDic["payload"] = payloadDic;
 
@@ -287,7 +304,17 @@ namespace Poco.Utils
             float[] arr = new float[] { n1, n2 };
             return arr;
         }
-
+        static private Dictionary<string, float> StrToZOrdersDic(string str)
+        {
+            string tmp = str.Substring(1, str.Length - 2);
+            string[] tmpArr = tmp.Split(',');
+            float n1 = float.Parse(tmpArr[0]);
+            float n2 = float.Parse(tmpArr[1]);
+            Dictionary<string, float> dic = new Dictionary<string, float>();
+            dic["local"] = n1;
+            dic["global"] = n2;
+            return dic;
+        }
 
     }
 }

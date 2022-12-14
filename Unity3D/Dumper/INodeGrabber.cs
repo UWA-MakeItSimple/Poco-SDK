@@ -29,7 +29,7 @@ namespace Poco
 			{ "size", new float[2]{ 0.0f, 0.0f } },
 			{ "scale", new float[2]{ 1.0f, 1.0f } },
 			{ "anchorPoint", new float[2]{ 0.5f, 0.5f } },
-			{ "zOrders", new Dictionary<string, float> (){ { "local", 0 }, { "global", 0 } } }
+			{ "zOrders", new Dictionary<string, float> (){ { "global", 0 }, { "local", 0 } } }
 		};
 
 		//public Dictionary<string, object> enumerateAttrs()

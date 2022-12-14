@@ -44,24 +44,70 @@ namespace Poco.Utils
 
             Dictionary<string, object> objPayload = nodeDic["payload"] as Dictionary<string, object>;
 
-            AppendQuotationStr(sb, objPayload["name"].ToString());
-            sb.Append(",");
 
-            AppendQuotationStr(sb, objPayload["visible"].ToString());
-            sb.Append(",");
+            object nameObj = null;
 
-            AppendFloatArr(sb, (float[])objPayload["pos"]);
-            sb.Append(",");
+            int attrCnt = 0;
 
-            AppendFloatArr(sb, (float[])objPayload["size"]);
-            sb.Append(",");
+            objPayload.TryGetValue("name", out nameObj);
+            if(nameObj!=null)
+            {
+                AppendQuotationStr(sb, nameObj.ToString());
+                attrCnt++;
+            }
 
-            AppendFloatArr(sb, (float[])objPayload["anchorPoint"]);
+            object visibleObj = null;
+            objPayload.TryGetValue("visible", out visibleObj);
+            if (visibleObj != null)
+            {
+                if (attrCnt > 0) sb.Append(",");
+
+                AppendQuotationStr(sb, visibleObj.ToString());
+                attrCnt++;
+            }
+
+            object posObj = null;
+            objPayload.TryGetValue("pos", out posObj);
+            if (posObj != null)
+            {
+                if (attrCnt > 0) sb.Append(",");
+
+                AppendFloatArr(sb, (float[])posObj);
+                attrCnt++;
+            }
+
+            object sizeObj = null;
+            objPayload.TryGetValue("size", out sizeObj);
+            if (sizeObj != null)
+            {
+                if (attrCnt > 0) sb.Append(",");
+
+                AppendFloatArr(sb, (float[])sizeObj);
+                attrCnt++;
+            }
+
+            object anchorPointObj = null;
+            objPayload.TryGetValue("anchorPoint", out anchorPointObj);
+            if (anchorPointObj != null)
+            {
+                if (attrCnt > 0) sb.Append(",");
+
+                AppendFloatArr(sb, (float[])anchorPointObj);
+                attrCnt++;
+            }
+
+            object zOrdersObj = null;
+            objPayload.TryGetValue("zOrders", out zOrdersObj);
+            if (zOrdersObj != null)
+            {
+                if (attrCnt > 0) sb.Append(",");
+
+                AppendzOrdersArr(sb, (Dictionary<string, float>)zOrdersObj);
+                attrCnt++;
+            }
             sb.Append("}");
-
-
+            
             //left_sb.AppendFormat("{0},{1},{2},{3},{4}}", name, visible, pos, size, anchorPoint);
-
             //left_sb.Append(name_sb);
             //left_sb.Append(",");
             //left_sb.Append(visible_sb);
@@ -71,7 +117,6 @@ namespace Poco.Utils
             //left_sb.Append(size_sb);
             //left_sb.Append(",");
             //left_sb.Append(anchorPoint_sb);
-            
 
             object childListObj = null;
 
@@ -108,6 +153,7 @@ namespace Poco.Utils
         }
 
 
+
         private static void AppendFloatArr(StringBuilder m_sb, float[] arr)
         {
 
@@ -123,6 +169,11 @@ namespace Poco.Utils
         private static void AppendQuotationStr(StringBuilder m_sb, string str)
         {
             m_sb.AppendFormat("\"{0}\"", str);
+        }
+
+        private static void AppendzOrdersArr(StringBuilder m_sb, Dictionary<string, float> zOrdersDic)
+        {
+            m_sb.AppendFormat("[{0},{1}]", zOrdersDic["local"], zOrdersDic["global"]);
         }
 
     }

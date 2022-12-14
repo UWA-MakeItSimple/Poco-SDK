@@ -18,13 +18,15 @@ namespace Poco
 
     public class PocoManager : MonoBehaviour
     {
-        //�Ż�Json���л�����
-        public const string versionCode = "UWA-1.5.2";
+        
+        public const string versionCode = "UWA-2.0";
         public int port = 5001;
         private bool mRunning;
         public AsyncTcpServer server = null;
         private RPCParser rpc = null;
         private SimpleProtocolFilter prot = null;
+        //private enum EDataMode { Detailed,  Optimized }
+
 
         //private IDumper<GameObject> dumperOriginal = new UnityDumper();
         //private UnityDumper dumperOptimized = new UnityDumper();
@@ -51,7 +53,8 @@ namespace Poco
 
 #if UNITY_EDITOR
 
-        string remoteCallMsg = "{\"method\": \"Dump\", \"params\": [true], \"jsonrpc\": \"2.0\", \"id\": \"10630993-7bd4-404c-b6b2-c99f8a26bb8f\"}";
+        //string remoteCallMsg = "{\"method\": \"Dump\", \"params\": [true], \"jsonrpc\": \"2.0\", \"id\": \"10630993-7bd4-404c-b6b2-c99f8a26bb8f\"}";
+        string remoteCallMsg = "{\"method\": \"SetPruningEnabled\", \"params\": [true], \"jsonrpc\": \"2.0\", \"id\": \"10630993-7bd4-404c-b6b2-c99f8a26bb8f\"}";
 
         private void OnGUI()
         {
@@ -62,7 +65,8 @@ namespace Poco
             GUILayout.BeginVertical();
             GUILayout.FlexibleSpace();
             if (GUILayout.Button("DirectDump", btnStyle))
-            { 
+            {
+                Config.Instance.optimizeDataEnabled = true;
                 //Config.Instance.pruningEnabled = true;
                 string result = (string)Dump(new List<object> { true });
 
@@ -73,6 +77,7 @@ namespace Poco
                 //};
 
                 string response = rpc.formatResponse("123", result);
+                Debug.Log(response);
 
                 //int dataSize = 0;
                 //byte[] bytes = prot.pack(response, out dataSize);
@@ -93,13 +98,13 @@ namespace Poco
 
 
 
-                //Dictionary<string, object> dic = Deserialize.StrToDic(result);
-                //string res2 = Poco.Utils.HierarchyTranslator.HierarchyToStr(dic);
+                Dictionary<string, object> dic = Deserialize.StrToDic(result);
+                string res2 = Poco.Utils.HierarchyTranslator.HierarchyToStr(dic);
                 //using (System.IO.StreamWriter sw = new System.IO.StreamWriter("DumpData/DumpData-" + timeTag + "2.json"))
                 //{
                 //    sw.Write(res2);
                 //}
-                //UnityEngine.Debug.Log(res2);
+                UnityEngine.Debug.Log(res2);
 
                 //byte[] resBytes = System.Text.Encoding.Default.GetBytes(response);
                 //UnityEngine.Debug.Log(((float)resBytes.Length) / 1024 / 1024);
@@ -108,6 +113,7 @@ namespace Poco
             if (GUILayout.Button("RpcDump", btnStyle))
             {
                 string rst = rpc.HandleMessage(remoteCallMsg);
+
                 Debug.Log(rst);
             }
 
@@ -165,6 +171,7 @@ namespace Poco
             prot = new SimpleProtocolFilter();
             rpc = new RPCParser();
             rpc.addRpcMethod("isVRSupported", vr_support.isVRSupported);
+            rpc.addRpcMethod("isVrSupported", vr_support.isVRSupported);
             rpc.addRpcMethod("hasMovementFinished", vr_support.IsQueueEmpty);
             rpc.addRpcMethod("RotateObject", vr_support.RotateObject);
             rpc.addRpcMethod("ObjectLookAt", vr_support.ObjectLookAt);
@@ -178,6 +185,7 @@ namespace Poco
             rpc.addRpcMethod("SetBlackList", SetBlackList);
             rpc.addRpcMethod("SetWhiteList", SetWhiteList);
             rpc.addRpcMethod("SetPruningEnabled", SetPruningEnabled);
+            rpc.addRpcMethod("SetOptimizeDataEnabled", SetOptimizeDataEnabled);
             rpc.addRpcMethod("SetBlockedAttributes", SetBlockedAttributes);
             rpc.addRpcMethod("CollectWeakWhitelist", CollectWeakWhitelist);
             rpc.addRpcMethod("GetDumpInfo", GetDumpInfo);
@@ -269,11 +277,20 @@ namespace Poco
 
             LogUtil.ULogDev("Dump Method executed");
 
+            if(Config.Instance.optimizeDataEnabled)
+            {
+                string res = Poco.Utils.HierarchyTranslator.HierarchyToStr(h);
+                UWASDKAgent.PopSample();
 
-            string res = Poco.Utils.HierarchyTranslator.HierarchyToStr(h);
+                return res;
 
-            UWASDKAgent.PopSample();
-            return res;
+            }
+            else
+            {
+                UWASDKAgent.PopSample();
+                return h;
+            }
+
         }
 
         [RPC]
@@ -383,6 +400,20 @@ namespace Poco
         }
 
         [RPC]
+        private object SetOptimizeDataEnabled(List<object> param)
+        {
+            var value = true;
+            if (param.Count > 0)
+            {
+                value = (bool)param[0];
+            }
+
+            Config.Instance.optimizeDataEnabled = value;
+
+            return "SetOptimizeDataEnabled " + value;
+        }
+
+        [RPC]
         private object SetBlockedAttributes(List<object> param)
         {
             LogUtil.ULogDev("SetBlockedAttributes");
@@ -391,7 +422,11 @@ namespace Poco
 
             foreach (var p in param)
             {
-                ba.Add((string)p);
+                string tmp = (string)p;
+                if (!Config.Instance.AttrCannotBlock.Contains(tmp))
+                {
+                    ba.Add(tmp);
+                }
             }
 
             Config.Instance.blockedAttributes = ba;
@@ -609,7 +644,10 @@ namespace Poco
                 // return result response
                 if(result.GetType() == typeof(string))
                 {
-                    response = formatResponse(idAction, (string)result);
+   
+                    //自己拼接字符串的方式，由于双引号问题导致数据无效，此处还是先使用原先的序列化方式。
+                    response = formatResponse(idAction, (object)result);
+
                 }
                 else
                 {
@@ -659,11 +697,11 @@ namespace Poco
         public string formatResponse(object idAction, object result)
         {
 
-            if(result.GetType() == typeof(string))
-            {
-                throw new Exception("Invalid result");
-            }
-            else
+            //if(result.GetType() == typeof(string))
+            //{
+            //    throw new Exception("Invalid result");
+            //}
+            //else
             {
                 //Dictionary<string, object> rpc = new Dictionary<string, object>();
                 Dictionary<string, object> rpc = DicPoolSO3.Ins.GetObj();
@@ -680,7 +718,8 @@ namespace Poco
 
 
         }
-
+        StringBuilder responseSB = new StringBuilder();
+        string responseHead = "{\"jsonrpc\":\"2.0\",\"id\":";
         public string formatResponse(object idAction, string result)
         {
 
@@ -690,16 +729,16 @@ namespace Poco
             }
             else
             {
+                if (responseSB == null) responseSB = new StringBuilder();
+                responseSB.Clear();
+
+                responseSB.AppendFormat("{0}\"{1}\",\"result\":{2}", responseHead, idAction.ToString(), result);
                 //Dictionary<string, object> rpc = new Dictionary<string, object>();
-                Dictionary<string, object> rpc = DicPoolSO3.Ins.GetObj();
-                rpc["jsonrpc"] = "2.0";
-                rpc["id"] = idAction;
-                rpc["result"] = result;
                 //return Utf8Json.JsonSerializer.ToJsonString(rpc);
                 //return Newtonsoft.Json.JsonConvert.SerializeObject(rpc, settings);
                 //return Newtonsoft.Json.JsonConvert.SerializeObject(rpc);
-
-                return JsonAgent.SerializeDic(rpc); ;
+                responseSB.Append("}");
+                return responseSB.ToString();
                 //return JsonAgent.SerializeResponse(rpc);
             }
 
