@@ -105,7 +105,9 @@ namespace Poco
                 //    sw.Write(res2);
                 //}
                 UnityEngine.Debug.Log(res2);
-
+                DicPoolManager.ReleasePools();
+                ListPoolManager.ReleasePools();
+                ArrPoolManager.ReleasePools();
                 //byte[] resBytes = System.Text.Encoding.Default.GetBytes(response);
                 //UnityEngine.Debug.Log(((float)resBytes.Length) / 1024 / 1024);
             }
@@ -500,6 +502,8 @@ namespace Poco
 
                     DicPoolManager.ReleasePools();
                     ListPoolManager.ReleasePools();
+                    ArrPoolManager.ReleasePools();
+
 
                 }
 

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Poco.Utils
 {
-    abstract class ObjectPool<T>  where T : new()
+    abstract class ObjectPool<T> // where T : new()
     {
         public int Capacity = 30;
         public int ObjCount = 0;

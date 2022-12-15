@@ -8,10 +8,10 @@ namespace Poco.Utils
     {
         static StringBuilder sb = new StringBuilder();
 
-        
-
         public static string HierarchyToStr(Dictionary<string, object> h)
         {
+
+            Init();
             string result;
 
             if(sb == null)
@@ -154,6 +154,80 @@ namespace Poco.Utils
 
 
 
+        // -1 -0.5 0 0.5 1 1.5 2 2.5 3 3.5 
+        // 0    1  2  3  4  5  6  7  8  9 
+
+        private static void Init()
+        {
+            ArrToStrDic = new string[10, 10];
+            ArrToStrDic[0, 0] = "[-1,-1]";
+            ArrToStrDic[1, 1] = "[-0.5,-0.5]";
+            ArrToStrDic[2, 2] = "[0,0]";
+            ArrToStrDic[3, 3] = "[0.5,0.5]";
+            ArrToStrDic[4, 4] = "[1,1]";
+            ArrToStrDic[5, 5] = "[1.5,1.5]";
+            ArrToStrDic[6, 6] = "[2,2]";
+            ArrToStrDic[0, 0] = "[-1,-1]";
+            for(int i=0; i<5; i++)
+            {
+                for(int j=0; j<5; j++)
+                {
+                    ArrToStrDic[i, j] = string.Format("[{0},{1}]", IndexToV(i), IndexToV(j));
+                }
+            }
+
+        }
+
+        static string[,] ArrToStrDic = null;
+        private static int VToIndex(float v)
+        {
+            if (v == -1) return 0;
+            if (v == -0.5f) return 1;
+            if (v == 0) return 2;
+            if (v == 0.5f) return 3;
+            if (v == 1) return 4;
+            if (v == 1.5f) return 5;
+            if (v == 2) return 6;
+            if (v == 2.5f) return 7;
+            if (v == 3) return 8;
+            if (v == 3.5f) return 9;
+
+            return -1;
+        }
+        private static float IndexToV(int ind)
+        {
+            if (ind == 0) return -1;
+            if (ind == 1) return -0.5f;
+            if (ind == 2) return 0;
+            if (ind == 3) return 0.5f;
+            if (ind == 4) return 1;
+            if (ind == 5) return 1.5f;
+            if (ind == 6) return 2;
+            if (ind == 7) return 2.5f;
+            if (ind == 8) return 3;
+            if (ind == 9) return 3.5f;
+
+            return -1;
+        }
+
+        private static bool TryArrToStr(float x, float y, out string Str)
+        {
+            Str = "";
+            int ind_x = VToIndex(x);
+            int ind_y = VToIndex(y);
+            if(ind_x != -1 && ind_y!=-1)
+            {
+                Str = ArrToStrDic[ind_x, ind_y];
+                return true;
+            }else
+            {
+                return false;
+            }
+
+        }
+
+
+
         private static void AppendFloatArr(StringBuilder m_sb, float[] arr)
         {
 
@@ -161,19 +235,50 @@ namespace Poco.Utils
             {
                 return;
             }
-            m_sb.AppendFormat("[{0},{1}]", arr[0], arr[1]);
+
+            string str = null;
+            bool flag = TryArrToStr(arr[0], arr[1], out str);
+            if(flag)
+            {
+                m_sb.Append(str);
+            }
+            else
+            {
+                m_sb.Append('[');
+                m_sb.Append(arr[0]);
+                m_sb.Append(',');
+                m_sb.Append(arr[1]);
+                m_sb.Append(']');
+            }
+
 
 
         }
 
         private static void AppendQuotationStr(StringBuilder m_sb, string str)
         {
-            m_sb.AppendFormat("\"{0}\"", str);
+            m_sb.Append('\"');
+            m_sb.Append(str);
+            m_sb.Append('\"');
         }
 
         private static void AppendzOrdersArr(StringBuilder m_sb, Dictionary<string, float> zOrdersDic)
         {
-            m_sb.AppendFormat("[{0},{1}]", zOrdersDic["local"], zOrdersDic["global"]);
+            string str = null;
+            bool flag = TryArrToStr(zOrdersDic["global"], zOrdersDic["local"], out str);
+            if (flag)
+            {
+                m_sb.Append(str);
+            }else
+            {
+
+                m_sb.Append('[');
+                m_sb.Append(zOrdersDic["global"]);
+                m_sb.Append(',');
+                m_sb.Append(zOrdersDic["local"]);
+                m_sb.Append(']');
+            }
+
         }
 
     }

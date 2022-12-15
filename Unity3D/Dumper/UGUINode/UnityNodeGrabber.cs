@@ -39,6 +39,7 @@ namespace Poco
         private Vector2 objectPos;
         private List<string> components;
         private Camera camera;
+        private Camera[] allCams;
 
         public bool protectedByParent;
         public string name;
@@ -46,6 +47,12 @@ namespace Poco
         public UnityNodeGrabber()
         {
 
+        }
+
+        public void Init()
+        {
+            allCams = Camera.allCameras;
+            
         }
 
 
@@ -184,8 +191,9 @@ namespace Poco
 
             gameObject = go;
             name = go.name;
+
             camera = Camera.main;
-            foreach (var cam in Camera.allCameras)
+            foreach (var cam in allCams)
             {
                 // skip the main camera
                 // we want to use specified camera first then fallback to main camera if no other cameras
@@ -199,8 +207,14 @@ namespace Poco
                     camera = cam;
                 }
             }
+
             this.renderer = renderer;
-            rectTransform = gameObject.GetComponent<RectTransform>();
+
+            if (components.Contains("RectTransform"))
+            {
+                rectTransform = gameObject.GetComponent<RectTransform>();
+            }
+
             rect = GameObjectRect(renderer, rectTransform);
             objectPos = renderer ? WorldToGUIPoint(camera, renderer.bounds.center) : Vector2.zero;
             this.components = components;
@@ -232,9 +246,9 @@ namespace Poco
         {
             UWASDKAgent.PushSample("UNodeOptmzd.GuessObjectTypeFromComponentNames");
 
-            List<string> cns = new List<string>(components);
-            cns.Reverse();
-            foreach (string name in cns)
+
+            //cns.Reverse();
+            foreach (string name in components)
             {
                 if (TypeNames.ContainsKey(name))
                 {
@@ -309,6 +323,7 @@ namespace Poco
         {
             return gameObject.layer;
         }
+
         private string GameObjectLayerName()
         {
             return LayerMask.LayerToName(gameObject.layer);
@@ -316,14 +331,31 @@ namespace Poco
 
         private bool GameObjectClickable(List<string> components)
         {
-            Button button = gameObject.GetComponent<Button>();
-            return button ? button.isActiveAndEnabled : false;
+            if (components.Contains("Button"))
+            {
+
+                Button button = gameObject.GetComponent<Button>();
+                return button ? button.isActiveAndEnabled : false;
+            }else
+            {
+                return false;
+            }
+
         }
 
         private string GameObjectText()
         {
-            Text text = gameObject.GetComponent<Text>();
-            return text ? text.text : null;
+            if(components.Contains("Text"))
+            {
+                Text text = gameObject.GetComponent<Text>();
+                return text ? text.text : null;
+            }
+            else
+            {
+                return null;
+            }
+
+
         }
 
         private string GameObjectTag()
@@ -391,7 +423,7 @@ namespace Poco
         {
             UWASDKAgent.PushSample("UNodeOptmzd.GameObjectPosInScreen");
 
-            float[] pos = { 0f, 0f };
+            float[] pos = ArrPool_float.Ins.GetObj();
 
             if (renderer)
             {
@@ -476,7 +508,7 @@ namespace Poco
         {
             UWASDKAgent.PushSample("UNodeOptmzd.GameObjectSizeInScreen");
 
-            float[] size = { 0f, 0f };
+            float[] size = ArrPool_float.Ins.GetObj();
             if (rectTransform)
             {
                 Canvas rootCanvas = GetRootCanvas(gameObject);
@@ -485,24 +517,27 @@ namespace Poco
                 {
                     case RenderMode.ScreenSpaceCamera:
                         Rect _rect = RectTransformUtility.PixelAdjustRect(rectTransform, rootCanvas);
-                        size = new float[] {
-                            _rect.width * rootCanvas.scaleFactor / (float)Screen.width,
-                            _rect.height * rootCanvas.scaleFactor / (float)Screen.height
-                        };
+                        size[0] = _rect.width * rootCanvas.scaleFactor / (float)Screen.width;
+                        size[1] = _rect.height * rootCanvas.scaleFactor / (float)Screen.height;
                         break;
                     case RenderMode.WorldSpace:
                         Rect rect_ = rectTransform.rect;
                         RectTransform canvasTransform = rootCanvas.GetComponent<RectTransform>();
-                        size = new float[] { rect_.width / canvasTransform.rect.width, rect_.height / canvasTransform.rect.height };
+                        //size = new float[] { rect_.width / canvasTransform.rect.width, rect_.height / canvasTransform.rect.height };
+                        size[0] = rect_.width / canvasTransform.rect.width;
+                        size[1] = rect_.height / canvasTransform.rect.height;
+
                         break;
                     default:
-                        size = new float[] { rect.width / (float)Screen.width, rect.height / (float)Screen.height };
+                        size[0] = rect.width / (float)Screen.width;
+                        size[1] = rect.height / (float)Screen.height;
                         break;
                 }
             }
             else
             {
-                size = new float[] { rect.width / (float)Screen.width, rect.height / (float)Screen.height };
+                size[0] = rect.width / (float)Screen.width;
+                size[1] = rect.height / (float)Screen.height;
             }
             UWASDKAgent.PopSample();
             return size;
@@ -510,7 +545,9 @@ namespace Poco
 
         private float[] GameObjectAnchorInScreen(Renderer renderer, Rect rect, Vector3 objectPos)
         {
-            float[] defaultValue = { 0.5f, 0.5f };
+            float[] defaultValue = ArrPool_float.Ins.GetObj();
+            defaultValue[0] = 0.5f;
+            defaultValue[1] = 0.5f;
             if (rectTransform)
             {
                 Vector2 data = rectTransform.pivot;
@@ -523,27 +560,42 @@ namespace Poco
                 //<Modified> some object do not have renderer
                 return defaultValue;
             }
-            float[] anchor = { (objectPos.x - rect.xMin) / rect.width, (objectPos.y - rect.yMin) / rect.height };
-            if (Double.IsNaN(anchor[0]) || Double.IsNaN(anchor[1]))
+            float f0 = (objectPos.x - rect.xMin) / rect.width;
+            float f1 = (objectPos.y - rect.yMin) / rect.height; 
+            if (Double.IsNaN(f0) || Double.IsNaN(f1))
             {
                 return defaultValue;
             }
-            else if (Double.IsPositiveInfinity(anchor[0]) || Double.IsPositiveInfinity(anchor[1]))
+            else if (Double.IsPositiveInfinity(f0) || Double.IsPositiveInfinity(f1))
             {
                 return defaultValue;
             }
-            else if (Double.IsNegativeInfinity(anchor[0]) || Double.IsNegativeInfinity(anchor[1]))
+            else if (Double.IsNegativeInfinity(f0) || Double.IsNegativeInfinity(f1))
             {
                 return defaultValue;
             }
             else
             {
+                float[] anchor = ArrPool_float.Ins.GetObj();
+                anchor[0] = f0;
+                anchor[1] = f1;
                 return anchor;
             }
         }
 
+        HashSet<string> ImageComps = new HashSet<string>() { "Image", "RawImage", "SpriteRenderer", "Renderer" };
         private string GetImageSourceTexture()
         {
+            bool hasImage = false;
+            foreach(var comp in components)
+            {
+                if (ImageComps.Contains(comp))
+                    hasImage = true;
+            }
+
+
+            if (!hasImage) return null;
+
             Image image = gameObject.GetComponent<Image>();
             if (image != null && image.sprite != null)
             {

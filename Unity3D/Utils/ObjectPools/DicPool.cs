@@ -108,7 +108,7 @@ namespace Poco.Utils
     {
         public static void ReleasePools()
         {
-            UnityEngine.Debug.Log("DicPoolManager. ReleasePools -----------------------------");
+            //UnityEngine.Debug.Log("DicPoolManager. ReleasePools -----------------------------");
 
             DicPoolSF2.Ins.ReleaseAll();
             DicPoolSO3.Ins.ReleaseAll();

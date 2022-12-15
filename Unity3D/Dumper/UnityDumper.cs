@@ -17,6 +17,9 @@ namespace Poco
         {
             List<GameObject> firstLevelNodes = GetFirstLevelNodes();
 
+            UnityNodeGrabber.Instance.Init();
+
+
             //CreateRoot
             Dictionary<string, object> payload = RootNodeGrabber.Instance.GetPayload(null);
 
@@ -73,10 +76,15 @@ namespace Poco
                     return null;
             }
 
-            Renderer renderer = go.GetComponent<Renderer>();
 
             //由于IsVisible一定要获取，而通过GetAllComponents来得到IsVisible又是最优的，所以将components也作为必须获取的项。
             List<string> components =UnityNodeGrabber.Instance.GameObjectAllComponents(go);
+            Renderer renderer = null;
+            if (components.Contains("Renderer"))
+            {
+                renderer = go.GetComponent<Renderer>();
+
+            }
             if (onlyVisibleNode && !UnityNodeGrabber.GameObjectVisible(go, renderer, components))
             {
                 return null;
