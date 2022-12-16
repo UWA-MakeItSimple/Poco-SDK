@@ -9,6 +9,7 @@ using System.Text;
 using UnityEngine;
 using System.Threading.Tasks;
 using Poco.Utils;
+using Cysharp.Text;
 
 namespace Poco.TcpServer
 {
@@ -29,6 +30,11 @@ namespace Poco.TcpServer
 		[有效数据]字段接收到后会按照utf-8进行解码，因为在传输过程中是用utf-8进行编码的
 		所有编解码的操作在该类中完成
 		*/
+
+        public SimpleProtocolFilter()
+        {
+            packBuilder = ZString.CreateUtf8StringBuilder(false);
+        }
 
         private byte[] buf = new byte[0];
         private int HEADER_SIZE = 4;
@@ -67,6 +73,41 @@ namespace Poco.TcpServer
             return ret;
         }
 
+
+        Utf8ValueStringBuilder packBuilder;
+        public byte[] packOptimized(ReadOnlySpan<byte> content, out int dataSize)
+        {
+            UWASDKAgent.PushSample("TcpServer.pack");
+            LogUtil.ULogDev("Pack Msg");
+            packBuilder.Clear();
+
+            int len = content.Length;
+            byte[] size = BitConverter.GetBytes(len);
+            if (!BitConverter.IsLittleEndian)
+            {
+                //reverse it so we get little endian.
+                Array.Reverse(size);
+            }
+            ReadOnlySpan<byte> span = new ReadOnlySpan<byte>(size);
+            //byte[] body = System.Text.Encoding.Default.GetBytes(content);
+
+            //dataSize = size.Length + body.Length;
+            //LogUtil.ULogDev("Body Size to send:" + dataSize);
+
+            packBuilder.AppendLiteral(size);
+            //string test1 = packBuilder.ToString();
+
+            packBuilder.AppendLiteral(content);
+
+            byte[] ret = packBuilder.AsMemory().ToArray();
+            //string test2 = packBuilder.ToString();
+
+            dataSize = ret.Length;
+
+            UWASDKAgent.PopSample();
+            return ret;
+        }
+
         public byte[] pack(String content, out int dataSize)
         {
             UWASDKAgent.PushSample("TcpServer.pack");
@@ -90,9 +131,11 @@ namespace Poco.TcpServer
             return ret;
         }
 
+
         private static byte[] CombineOptimized(byte[] first, byte[] second)
         {
             byte[] buf = SendBufManager.Ins.GetBuf(first.Length+second.Length);
+
             Buffer.BlockCopy(first, 0, buf, 0, first.Length);
             Buffer.BlockCopy(second, 0, buf, first.Length, second.Length);
             return buf;

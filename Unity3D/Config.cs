@@ -9,7 +9,7 @@ namespace Poco
         public static Config Instance = new Config();
 
 #if UWA_POCO_DEBUG
-        public bool pruningEnabled = true;
+        public bool pruningEnabled = false;
         public bool optimizeDataEnabled = true;
 
 #else

@@ -19,9 +19,43 @@ namespace Poco.Utils
             Init();
         }
 
-        public static string HierarchyToStr(Dictionary<string, object> h)
-        {
+        //public static string HierarchyToStr(Dictionary<string, object> h)
+        //{
 
+        //    string result;
+
+        //    //if(sb == null)
+        //    //{
+        //    //    //sb = new StringBuilder();
+        //    //    sb = ZString.CreateUtf8StringBuilder();
+        //    //}
+
+        //    //sb.Clear();
+        //    //sb = ZString.CreateUtf8StringBuilder(false);
+        //    sb.Clear();
+            
+        //    DfsToStr(ref sb, h);
+        //    int len = sb.Length;
+
+        //    //var mem = sb.AsMemory();
+        //    //result = mem.ToArray();
+
+
+        //    //StringBuilder sb = new StringBuilder();
+
+
+        //    //MemoryStream ms = new MemoryStream();
+        //    //ms.Write("test");
+
+
+        //    result = sb.ToString();
+
+        //    return result;
+        //}
+
+        public static ReadOnlySpan<byte> HierarchyToStr(Dictionary<string, object> h)
+        {
+            
             string result;
 
             //if(sb == null)
@@ -33,26 +67,30 @@ namespace Poco.Utils
             //sb.Clear();
             //sb = ZString.CreateUtf8StringBuilder(false);
             sb.Clear();
-            
+
             DfsToStr(ref sb, h);
             int len = sb.Length;
 
-            //var mem = sb.AsMemory();
-            //result = mem.ToArray();
+            var sp = sb.AsSpan();
+            //byte[] result2 = mem.ToArray();
+            //int len2 = mem.Length;
 
+            //Debug.Log(len + "------" + len2);
 
             //StringBuilder sb = new StringBuilder();
 
 
             //MemoryStream ms = new MemoryStream();
             //ms.Write("test");
+            //Utf8ValueStringBuilder sb2  = ZString.CreateUtf8StringBuilder(false);
 
+            //sb2.Clear();
+            //sb.Append(sb2);
+            
+            //result = sb.ToString();
 
-            result = sb.ToString();
-
-            return result;
+            return sp;
         }
-
 
 
 
@@ -86,7 +124,8 @@ namespace Poco.Utils
             {
                 if (attrCnt > 0) sb.Append(",");
 
-                AppendQuotationStr(ref sb, visibleObj.ToString());
+                //AppendQuotationStr(ref sb, visibleObj.ToString());
+                AppendBoolStr(ref sb, (bool)visibleObj);
                 attrCnt++;
             }
 
@@ -281,12 +320,26 @@ namespace Poco.Utils
 
 
         }
+        static string Str_True = "\\\"True\\\"";
+        static string Str_False = "\\\"False\\\"";
+        private static void AppendBoolStr(ref Utf8ValueStringBuilder m_sb, bool v)
+        {
+            if (v)
+            {
+                m_sb.Append(Str_True);
+            }
+            else
+            {
+                m_sb.Append(Str_False);
+
+            }
+        }
 
         private static void AppendQuotationStr(ref Utf8ValueStringBuilder m_sb, string str)
         {
-            m_sb.Append('\"');
+            m_sb.Append("\\\"");
             m_sb.Append(str);
-            m_sb.Append('\"');
+            m_sb.Append("\\\"");
         }
 
         private static void AppendzOrdersArr(ref Utf8ValueStringBuilder m_sb, Dictionary<string, float> zOrdersDic)
