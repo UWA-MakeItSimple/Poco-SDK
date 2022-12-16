@@ -549,7 +549,7 @@ namespace Poco.TcpServer
 
         private void NetworkWriteAsync(NetworkStream stream, byte[] buffer, int offset, int size)
         {
-#if UWA_POCO_DEBUG
+#if UWA_POCO_DEBUG_Verbose
             Debug.Log("NetworkWriteAsync");
             Debug.Log("Write: BufferSize - " + buffer.Length);
 
@@ -576,7 +576,7 @@ namespace Poco.TcpServer
                 if (size - sentSize > tmpBufSize)
                 {
 
-#if UWA_POCO_DEBUG
+#if UWA_POCO_DEBUG_Verbose
                     Debug.Log(sentSize.ToString() + " / " + buffer.Length);
 #endif
 
@@ -588,7 +588,7 @@ namespace Poco.TcpServer
                 else
                 {
 
-#if UWA_POCO_DEBUG
+#if UWA_POCO_DEBUG_Verbose
                     Debug.Log(sentSize.ToString() + " / " + buffer.Length);
 #endif
                     stream.Write(buffer, tmpBufSize * cnt, size - sentSize);

@@ -10,6 +10,8 @@ namespace Poco
 
 #if UWA_POCO_DEBUG
         public bool pruningEnabled = true;
+        public bool optimizeDataEnabled = true;
+
 #else
         /// <summary>
         /// 一键开启或关闭剪枝功能

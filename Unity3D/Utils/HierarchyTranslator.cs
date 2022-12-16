@@ -2,41 +2,65 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Text;
+using System.IO;
+using Cysharp.Text;
+using System.Buffers;
+using System;
+
 namespace Poco.Utils
 {
     public class HierarchyTranslator
     {
-        static StringBuilder sb = new StringBuilder();
+        //static StringBuilder sb = new StringBuilder();
+        static Utf8ValueStringBuilder sb;
+
+        static HierarchyTranslator()
+        {
+            Init();
+        }
 
         public static string HierarchyToStr(Dictionary<string, object> h)
         {
 
-            Init();
             string result;
 
-            if(sb == null)
-            {
-                sb = new StringBuilder();
-            }
+            //if(sb == null)
+            //{
+            //    //sb = new StringBuilder();
+            //    sb = ZString.CreateUtf8StringBuilder();
+            //}
 
+            //sb.Clear();
+            //sb = ZString.CreateUtf8StringBuilder(false);
             sb.Clear();
-            //Utf8ValueStringBuilder sb = ZString.CreateUtf8StringBuilder();
+            
+            DfsToStr(ref sb, h);
+            int len = sb.Length;
+
+            //var mem = sb.AsMemory();
+            //result = mem.ToArray();
+
+
             //StringBuilder sb = new StringBuilder();
-            {
-                DfsToStr(sb, h);
-                
-            }
+
+
+            //MemoryStream ms = new MemoryStream();
+            //ms.Write("test");
+
+
             result = sb.ToString();
+
             return result;
         }
 
 
 
 
-        private static bool DfsToStr(StringBuilder sb, Dictionary<string, object> nodeDic)
+        private static bool DfsToStr(ref Utf8ValueStringBuilder sb, Dictionary<string, object> nodeDic)
         {
             if (nodeDic == null || nodeDic.Count == 0)
             {
+                UnityEngine.Debug.LogError("nodeDic is null");
                 return false;
             }
 
@@ -52,7 +76,7 @@ namespace Poco.Utils
             objPayload.TryGetValue("name", out nameObj);
             if(nameObj!=null)
             {
-                AppendQuotationStr(sb, nameObj.ToString());
+                AppendQuotationStr(ref sb, nameObj.ToString());
                 attrCnt++;
             }
 
@@ -62,7 +86,7 @@ namespace Poco.Utils
             {
                 if (attrCnt > 0) sb.Append(",");
 
-                AppendQuotationStr(sb, visibleObj.ToString());
+                AppendQuotationStr(ref sb, visibleObj.ToString());
                 attrCnt++;
             }
 
@@ -72,7 +96,7 @@ namespace Poco.Utils
             {
                 if (attrCnt > 0) sb.Append(",");
 
-                AppendFloatArr(sb, (float[])posObj);
+                AppendFloatArr(ref sb, (float[])posObj);
                 attrCnt++;
             }
 
@@ -82,7 +106,7 @@ namespace Poco.Utils
             {
                 if (attrCnt > 0) sb.Append(",");
 
-                AppendFloatArr(sb, (float[])sizeObj);
+                AppendFloatArr(ref sb, (float[])sizeObj);
                 attrCnt++;
             }
 
@@ -92,7 +116,7 @@ namespace Poco.Utils
             {
                 if (attrCnt > 0) sb.Append(",");
 
-                AppendFloatArr(sb, (float[])anchorPointObj);
+                AppendFloatArr(ref sb, (float[])anchorPointObj);
                 attrCnt++;
             }
 
@@ -102,7 +126,7 @@ namespace Poco.Utils
             {
                 if (attrCnt > 0) sb.Append(",");
 
-                AppendzOrdersArr(sb, (Dictionary<string, float>)zOrdersObj);
+                AppendzOrdersArr(ref sb, (Dictionary<string, float>)zOrdersObj);
                 attrCnt++;
             }
             sb.Append("}");
@@ -134,7 +158,7 @@ namespace Poco.Utils
                     {
                         object o = chldList[i];
 
-                        bool got_subnode = DfsToStr(sb, (Dictionary<string, object>)o);
+                        bool got_subnode = DfsToStr(ref sb, (Dictionary<string, object>)o);
                         if (got_subnode)
                         {
                             childCnt++;
@@ -157,8 +181,10 @@ namespace Poco.Utils
         // -1 -0.5 0 0.5 1 1.5 2 2.5 3 3.5 
         // 0    1  2  3  4  5  6  7  8  9 
 
-        private static void Init()
+        public static void Init()
         {
+            sb = ZString.CreateUtf8StringBuilder(false);
+
             ArrToStrDic = new string[10, 10];
             ArrToStrDic[0, 0] = "[-1,-1]";
             ArrToStrDic[1, 1] = "[-0.5,-0.5]";
@@ -228,7 +254,7 @@ namespace Poco.Utils
 
 
 
-        private static void AppendFloatArr(StringBuilder m_sb, float[] arr)
+        private static void AppendFloatArr(ref Utf8ValueStringBuilder m_sb, float[] arr)
         {
 
             if (arr==null||arr.Length !=2)
@@ -244,10 +270,11 @@ namespace Poco.Utils
             }
             else
             {
+                //LogUtil.ULogDev(arr[0] + ", " +arr[1]);
                 m_sb.Append('[');
-                m_sb.Append(arr[0]);
+                m_sb.Append(arr[0].ToString());
                 m_sb.Append(',');
-                m_sb.Append(arr[1]);
+                m_sb.Append(arr[1].ToString());
                 m_sb.Append(']');
             }
 
@@ -255,14 +282,14 @@ namespace Poco.Utils
 
         }
 
-        private static void AppendQuotationStr(StringBuilder m_sb, string str)
+        private static void AppendQuotationStr(ref Utf8ValueStringBuilder m_sb, string str)
         {
             m_sb.Append('\"');
             m_sb.Append(str);
             m_sb.Append('\"');
         }
 
-        private static void AppendzOrdersArr(StringBuilder m_sb, Dictionary<string, float> zOrdersDic)
+        private static void AppendzOrdersArr(ref Utf8ValueStringBuilder m_sb, Dictionary<string, float> zOrdersDic)
         {
             string str = null;
             bool flag = TryArrToStr(zOrdersDic["global"], zOrdersDic["local"], out str);
@@ -271,11 +298,12 @@ namespace Poco.Utils
                 m_sb.Append(str);
             }else
             {
+                //LogUtil.ULogDev(zOrdersDic["global"] + ", " + zOrdersDic["local"]);
 
                 m_sb.Append('[');
-                m_sb.Append(zOrdersDic["global"]);
+                m_sb.Append(zOrdersDic["global"].ToString());
                 m_sb.Append(',');
-                m_sb.Append(zOrdersDic["local"]);
+                m_sb.Append(zOrdersDic["local"].ToString());
                 m_sb.Append(']');
             }
 

@@ -15,7 +15,7 @@ namespace Poco
 		Dictionary<string, object> GetPayload(GameObject go);
 
 		//Dictionary<string, object> enumerateAttrs();
-		bool IsUIPanel(GameObject go);
+		bool IsUIPanel(GameObject go, List<string> components);
 	}
 	 
 	public class RootNodeGrabber : Poco.Utils.Singleton<RootNodeGrabber>, INodeGrabber
@@ -57,7 +57,7 @@ namespace Poco
             throw new NotImplementedException();
         }
 
-        public bool IsUIPanel(GameObject go)
+        public bool IsUIPanel(GameObject go, List<string> components)
         {
             throw new NotImplementedException();
         }

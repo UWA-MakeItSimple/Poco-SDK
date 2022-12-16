@@ -699,9 +699,11 @@ namespace Poco
         //}
 
 
-        public bool IsUIPanel(GameObject go)
+        public bool IsUIPanel(GameObject go,List<string> components)
         {
-            if (go.GetComponent<Canvas>() != null)
+
+
+            if (components.Contains("Canvas"))
             {
                 return true;
             }

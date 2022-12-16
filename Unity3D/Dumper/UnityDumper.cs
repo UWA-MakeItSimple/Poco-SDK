@@ -66,25 +66,31 @@ namespace Poco
 
             bool protectChildren = false;
 
-            if(Config.Instance.pruningEnabled)
+
+
+            //由于IsVisible一定要获取，而通过GetAllComponents来得到IsVisible又是最优的，所以将components也作为必须获取的项。
+            List<string> components =UnityNodeGrabber.Instance.GameObjectAllComponents(go);
+            Renderer renderer = null;
+
+
+
+            if (components.Contains("Renderer"))
+            {
+                renderer = go.GetComponent<Renderer>();
+
+            }
+
+
+            if (Config.Instance.pruningEnabled)
             {
                 UWASDKAgent.PushSample("UDmpOptmzd.Filter");
-                bool shouldVisit = Filter(go, protectedByParent, out protectChildren, depth);
+                bool shouldVisit = Filter(go, components, protectedByParent, out protectChildren, depth);
                 UWASDKAgent.PopSample();
 
                 if (!shouldVisit)
                     return null;
             }
 
-
-            //由于IsVisible一定要获取，而通过GetAllComponents来得到IsVisible又是最优的，所以将components也作为必须获取的项。
-            List<string> components =UnityNodeGrabber.Instance.GameObjectAllComponents(go);
-            Renderer renderer = null;
-            if (components.Contains("Renderer"))
-            {
-                renderer = go.GetComponent<Renderer>();
-
-            }
             if (onlyVisibleNode && !UnityNodeGrabber.GameObjectVisible(go, renderer, components))
             {
                 return null;
@@ -132,7 +138,7 @@ namespace Poco
         /// </summary>
         /// <param name="node"></param>
         /// <returns></returns>
-        private bool Filter(GameObject go,bool protectedByParent, out bool protectChildren, int depth)
+        private bool Filter(GameObject go,List<string> components, bool protectedByParent, out bool protectChildren, int depth)
         {
 
             string name = go.name;
@@ -141,7 +147,7 @@ namespace Poco
             //---------------------------------------------------------------------
 
             UWASDKAgent.PushSample("UDmpOptmzd.StringProtect");
-            bool tag1 = StrongProtect(go, name);
+            bool tag1 = StrongProtect(go,components, name);
             UWASDKAgent.PopSample();
 
             if (tag1)
@@ -193,9 +199,9 @@ namespace Poco
         /// </summary>
         /// <param name="node"></param>
         /// <returns></returns>
-        private bool StrongProtect(GameObject go, string name)
+        private bool StrongProtect(GameObject go, List<string> components, string name)
         {
-            if (UnityNodeGrabber.Instance.IsUIPanel(go))
+            if (UnityNodeGrabber.Instance.IsUIPanel(go, components))
             {
                 return true;
             }

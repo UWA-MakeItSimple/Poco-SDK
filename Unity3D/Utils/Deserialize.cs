@@ -311,8 +311,9 @@ namespace Poco.Utils
             float n1 = float.Parse(tmpArr[0]);
             float n2 = float.Parse(tmpArr[1]);
             Dictionary<string, float> dic = new Dictionary<string, float>();
-            dic["local"] = n1;
-            dic["global"] = n2;
+            dic["global"] = n1;
+            dic["local"] = n2;
+
             return dic;
         }
 
