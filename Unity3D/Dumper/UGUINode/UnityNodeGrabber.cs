@@ -440,8 +440,6 @@ namespace Poco
                             components.Add(compName);
                             CompNameDic[tp] = compName;
                         }
-
-
                         //components.Add(ac.name);
                     }
                 }

@@ -924,15 +924,93 @@ namespace Poco
         {
 
             responseBuilder.Clear();
-            responseBuilder.AppendFormat("{0}\"{1}\",\"result\":\"{2}\"", responseHead, idAction.ToString(), result.ToString());
+
+            if(result.GetType() == typeof(object[]))
+            {
+                responseBuilder.AppendFormat("{0}\"{1}\",\"result\":", responseHead, idAction.ToString());
+
+                object[] resultArr = (object[])result;
+
+                for (int i = 0 ; i<resultArr.Length; i++)
+                {
+                    if (i == 0)
+                    {
+                        responseBuilder.Append('[');
+                    }
+
+                    Type tp = resultArr[i].GetType();
+                    if (tp == typeof(Boolean))
+                    {
+                        AppendBool(responseBuilder, (Boolean)resultArr[i]);
+                    } else if (tp == typeof(string))
+                    {
+                        AppendStr(responseBuilder, (string)resultArr[i]);
+
+                    }
+                    else if (tp == typeof(Int32))
+                    {
+                        AppendInt(responseBuilder, (Int32)resultArr[i]);
+
+                    }
+
+
+
+                    if (i != resultArr.Length - 1)
+                    {
+                        responseBuilder.Append(',');
+                    }else
+                    {
+                        responseBuilder.Append(']');
+                    }
+                }
+
+                LogUtil.ULogDev(responseBuilder.ToString());
+
+            }
+            else
+            {
+                responseBuilder.AppendFormat("{0}\"{1}\",\"result\":\"{2}\"", responseHead, idAction.ToString(), result.ToString());
+
+            }
+
             //Dictionary<string, object> rpc = new Dictionary<string, object>();
             //return Utf8Json.JsonSerializer.ToJsonString(rpc);
             //return Newtonsoft.Json.JsonConvert.SerializeObject(rpc, settings);
             //return Newtonsoft.Json.JsonConvert.SerializeObject(rpc);
             responseBuilder.Append("}");
 
+
             return responseBuilder.AsSpan();
         }
+
+
+        private void AppendBool(Utf8ValueStringBuilder builder, bool value)
+        {
+            if (value == false)
+            {
+                responseBuilder.Append("false");
+            }
+            else if (value == true)
+            {
+                responseBuilder.Append("true");
+            }
+        }
+
+
+        private void AppendStr(Utf8ValueStringBuilder builder, string value)
+        {
+            responseBuilder.Append('\"');
+            responseBuilder.Append(value);
+            responseBuilder.Append('\"');
+        }
+
+
+        private void AppendInt(Utf8ValueStringBuilder builder, int value)
+        {
+            responseBuilder.Append(value.ToString());
+        }
+
+
 
         public string formatResponse(object idAction, object result)
         {
@@ -952,7 +1030,13 @@ namespace Poco
                 //return Newtonsoft.Json.JsonConvert.SerializeObject(rpc, settings);
                 //return Newtonsoft.Json.JsonConvert.SerializeObject(rpc);
 
-                return JsonAgent.SerializeDic(rpc);
+                string response = JsonAgent.SerializeDic(rpc);
+
+
+                if(response.Length < 1000)
+                    LogUtil.ULogDev(response);
+
+                return response;
 
                 //return JsonAgent.SerializeResponse(rpc);
             }

@@ -66,7 +66,7 @@ namespace Poco.TcpServer
 
         public List<string> swap_msgs()
         {
-            LogUtil.ULogDev("SimpleProtocolFilter.swap_msgs");
+            //LogUtil.ULogDev("SimpleProtocolFilter.swap_msgs");
 
             List<string> ret = msgs;
             msgs = new List<string>(5);
@@ -833,7 +833,7 @@ class SendBufManager
     protected HashSet<byte[]> freshObjects;
     protected HashSet<byte[]> usedObjects;
 
-    private static Mutex mutex = new Mutex();
+    private  Mutex mutex = new Mutex();
 
     //Buffer: objects
     //Buffer: used objects
@@ -902,7 +902,7 @@ class SendBufManager
         }
         else
         {
-            throw new Exception("Release Buf exception");
+            LogUtil.ULogDev("SendBufManager: Buf is not got from pool");
         }
         mutex.ReleaseMutex();
         LogUtil.ULogDev("ReleaseBuf End");
