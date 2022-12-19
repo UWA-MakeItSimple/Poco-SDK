@@ -281,16 +281,16 @@ namespace Poco.Utils
 
         static private string TrimQuatation(string str)
         {
-            bool valid = str[0] == '\"' && str[str.Length - 1] == '\"';
+            bool valid = str[0] == '\\'&& str[1]=='\"' && str[str.Length - 2] == '\\' && str[str.Length - 1] == '\"';
             if (!valid) throw new System.Exception("TrimQuatation::Invalid str");
-            return str.Substring(1, str.Length - 2);
+            return str.Substring(2, str.Length - 4);
 
         }
 
         static private bool StrToBool(string str)
         {
-            if (str == "\"True\"") return true;
-            if (str == "\"False\"") return false;
+            if (str == "\\\"True\\\"") return true;
+            if (str == "\\\"False\\\"") return false;
 
             throw new System.Exception("StrToBool::invalid str");
         }

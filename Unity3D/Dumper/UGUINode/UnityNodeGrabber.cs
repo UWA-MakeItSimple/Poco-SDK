@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using UnityEngine.UI;
 using UnityEngine;
 using Poco.Utils;
-
+//using UnityEngine.GUI
+using UnityEngine.EventSystems;
 namespace Poco
 {
     public class UnityNodeGrabber : Poco.Utils.Singleton<UnityNodeGrabber> , INodeGrabber
@@ -49,10 +50,52 @@ namespace Poco
 
         }
 
+
+        static bool CompNameDicInited = false;
+        static Dictionary<Type, string> CompNameDic = new Dictionary<Type, string>();
+
         public void Init()
         {
             allCams = Camera.allCameras;
-            
+
+            if(CompNameDicInited == false)
+            {
+                //CompNameDic.TryAdd(typeof(Transform), "Transform");
+                ////CompNameDic.Add(typeof(GUIWrapper), "GUIWrapper");
+                //CompNameDic.TryAdd(typeof(Camera), "Camera");
+                //CompNameDic.TryAdd(typeof(FlareLayer), "FlareLayer");
+                //CompNameDic.TryAdd(typeof(AudioListener), "AudioListener");
+                //CompNameDic.TryAdd(typeof(Animator), "Animator");
+                //CompNameDic.TryAdd(typeof(SpriteRenderer), "SpriteRenderer");
+                //CompNameDic.TryAdd(typeof(ParticleSystem), "ParticleSystem");
+                //CompNameDic.TryAdd(typeof(ParticleSystemRenderer), "ParticleSystemRenderer");
+                //CompNameDic.TryAdd(typeof(MeshCollider), "MeshCollider");
+                //CompNameDic.TryAdd(typeof(EventSystem), "EventSystem");
+                //CompNameDic.TryAdd(typeof(StandaloneInputModule), "StandaloneInputModule");
+                //CompNameDic.TryAdd(typeof(TouchInputModule), "TouchInputModule");
+                //CompNameDic.TryAdd(typeof(BaseInput), "BaseInput");
+                //CompNameDic.TryAdd(typeof(RectTransform), "RectTransform");
+                //CompNameDic.TryAdd(typeof(Canvas), "Canvas");
+                //CompNameDic.TryAdd(typeof(GraphicRaycaster), "GraphicRaycaster");
+                //CompNameDic.TryAdd(typeof(CanvasScaler), "CanvasScaler");
+                //CompNameDic.TryAdd(typeof(PanelManager), "PanelManager");
+                //CompNameDic.TryAdd(typeof(CanvasRenderer), "CanvasRenderer");
+                //CompNameDic.TryAdd(typeof(Image), "Image");
+                //CompNameDic.TryAdd(typeof(TiltWindow), "TiltWindow");
+                //CompNameDic.TryAdd(typeof(Text), "Text");
+                //CompNameDic.TryAdd(typeof(Button), "Button");
+                //CompNameDic.TryAdd(typeof(PocoManager), "PocoManager");
+                //CompNameDic.TryAdd(typeof(ApplicationManager), "ApplicationManager");
+                CompNameDicInited = true;
+            }
+
+
+            //CompNameDic.Add(typeof(Transform),"Transform");
+            //CompNameDic.Add(typeof(Transform),"Transform");
+            //CompNameDic.Add(typeof(Transform),"Transform");
+            //CompNameDic.Add(typeof(Transform),"Transform");
+            //CompNameDic.Add(typeof(Transform),"Transform");
+
         }
 
 
@@ -372,6 +415,8 @@ namespace Poco
             return tag;
         }
 
+
+        public static HashSet<string> compTypes = new HashSet<string>();
         public List<string> GameObjectAllComponents(GameObject tmpGo)
         {
             //List<string> components = new List<string>();
@@ -383,7 +428,21 @@ namespace Poco
                 {
                     if (ac != null)
                     {
-                        components.Add(ac.GetType().Name);
+                        Type tp = ac.GetType();
+                        if (CompNameDic.ContainsKey(tp))
+                        {
+                            components.Add(CompNameDic[tp]);
+
+                        }
+                        else
+                        {
+                            string compName = tp.Name;
+                            components.Add(compName);
+                            CompNameDic[tp] = compName;
+                        }
+
+
+                        //components.Add(ac.name);
                     }
                 }
             }
@@ -519,6 +578,7 @@ namespace Poco
                         Rect _rect = RectTransformUtility.PixelAdjustRect(rectTransform, rootCanvas);
                         size[0] = _rect.width * rootCanvas.scaleFactor / (float)Screen.width;
                         size[1] = _rect.height * rootCanvas.scaleFactor / (float)Screen.height;
+                        LogUtil.ULogDev("GameObjectSizeInScreen - ScreenSpaceCamera");
                         break;
                     case RenderMode.WorldSpace:
                         Rect rect_ = rectTransform.rect;
@@ -526,9 +586,12 @@ namespace Poco
                         //size = new float[] { rect_.width / canvasTransform.rect.width, rect_.height / canvasTransform.rect.height };
                         size[0] = rect_.width / canvasTransform.rect.width;
                         size[1] = rect_.height / canvasTransform.rect.height;
+                        LogUtil.ULogDev("GameObjectSizeInScreen - WorldSpace");
 
                         break;
                     default:
+                        LogUtil.ULogDev("GameObjectSizeInScreen - default");
+
                         size[0] = rect.width / (float)Screen.width;
                         size[1] = rect.height / (float)Screen.height;
                         break;
@@ -536,10 +599,15 @@ namespace Poco
             }
             else
             {
+                LogUtil.ULogDev("GameObjectSizeInScreen - else");
+
                 size[0] = rect.width / (float)Screen.width;
                 size[1] = rect.height / (float)Screen.height;
             }
             UWASDKAgent.PopSample();
+
+            LogUtil.ULogDev("GameObjectSizeInScreen: " + gameObject.name + ":  " + size[0] + ", " +size[1]);
+
             return size;
         }
 
