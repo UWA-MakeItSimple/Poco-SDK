@@ -11,8 +11,6 @@ namespace Poco
 		object GetAttr(string attrName);
 		//void setAttr(string attrName, object val);
 
-		string GetName(GameObject go);
-
 		Dictionary<string, object> GetPayload(GameObject go, string name, List<string> components, Renderer renderer);
 		Dictionary<string, object> GetPayload(GameObject go);
 
@@ -44,10 +42,6 @@ namespace Poco
             throw new NotImplementedException();
         }
 
-        public string GetName(GameObject go)
-        {
-            throw new NotImplementedException();
-        }
 
         public Dictionary<string, object> GetPayload(GameObject go)
         {

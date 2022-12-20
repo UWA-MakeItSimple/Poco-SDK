@@ -10,59 +10,101 @@ namespace Poco
     {
         public static string DefaultTypeName = "GameObject";
         private GameObject gameObject;
+        private Renderer renderer;
         private DisplayObject displayObject;
         private GObject gObject;
         private List<string> components;
         private Camera camera;
+        private Camera[] allCams;
 
         public string name;
         public bool protectedByParent = false;
         private DisplayObjectInfo doInfo = null;
-        private UIPanel uipanelComp;
+        //private UIPanel uipanelComp;
         static float[] floatOneOne = new float[2] { 1.0f, 1.0f };
         static float[] floatZeroZero = new float[] { 0.0f, 0.0f };
+
         public UnityNodeGrabber()
         {
 
         }
 
+        static bool CompNameDicInited = false;
+        static Dictionary<Type, string> CompNameDic = new Dictionary<Type, string>();
 
-        public void GrabNode(GameObject obj)
+        public void Init()
         {
+            allCams = Camera.allCameras;
 
-
-            LogUtil.ULogDev("UnityNodeOptimized.ctor");
-
-            gameObject = obj;
-            camera = Camera.main;
-            foreach (var cam in Camera.allCameras)
+            if (CompNameDicInited == false)
             {
-                // skip the main camera
-                // we want to use specified camera first then fallback to main camera if no other cameras
-                // for further advanced cases, we could test whether the game object is visible within the camera
-                if (cam == Camera.main)
-                {
-                    continue;
-                }
-                if ((cam.cullingMask & (1 << gameObject.layer)) != 0)
-                {
-                    camera = cam;
-                }
+                //CompNameDic.TryAdd(typeof(Transform), "Transform");
+                //CompNameDic.TryAdd(typeof(GUIWrapper), "GUIWrapper");
+                //CompNameDic.TryAdd(typeof(Camera), "Camera");
+                //CompNameDic.TryAdd(typeof(FlareLayer), "FlareLayer");
+                //CompNameDic.TryAdd(typeof(AudioListener), "AudioListener");
+                //CompNameDic.TryAdd(typeof(Animator), "Animator");
+                //CompNameDic.TryAdd(typeof(SpriteRenderer), "SpriteRenderer");
+                //CompNameDic.TryAdd(typeof(ParticleSystem), "ParticleSystem");
+                //CompNameDic.TryAdd(typeof(ParticleSystemRenderer), "ParticleSystemRenderer");
+                //CompNameDic.TryAdd(typeof(MeshCollider), "MeshCollider");
+                //CompNameDic.TryAdd(typeof(EventSystem), "EventSystem");
+                //CompNameDic.TryAdd(typeof(StandaloneInputModule), "StandaloneInputModule");
+                //CompNameDic.TryAdd(typeof(TouchInputModule), "TouchInputModule");
+                //CompNameDic.TryAdd(typeof(BaseInput), "BaseInput");
+                //CompNameDic.TryAdd(typeof(RectTransform), "RectTransform");
+                //CompNameDic.TryAdd(typeof(Canvas), "Canvas");
+                //CompNameDic.TryAdd(typeof(GraphicRaycaster), "GraphicRaycaster");
+                //CompNameDic.TryAdd(typeof(CanvasScaler), "CanvasScaler");
+                //CompNameDic.TryAdd(typeof(PanelManager), "PanelManager");
+                //CompNameDic.TryAdd(typeof(CanvasRenderer), "CanvasRenderer");
+                //CompNameDic.TryAdd(typeof(Image), "Image");
+                //CompNameDic.TryAdd(typeof(TiltWindow), "TiltWindow");
+                //CompNameDic.TryAdd(typeof(Text), "Text");
+                //CompNameDic.TryAdd(typeof(Button), "Button");
+                //CompNameDic.TryAdd(typeof(PocoManager), "PocoManager");
+                //CompNameDic.TryAdd(typeof(ApplicationManager), "ApplicationManager");
+                CompNameDicInited = true;
             }
-
-            uipanelComp = gameObject.GetComponent<UIPanel>();
-            doInfo = gameObject.GetComponent<DisplayObjectInfo>();
-            if (doInfo != null)
-            {
-                displayObject = doInfo.displayObject;
-                gObject = displayObject.gOwner;
-            }
-
-            name = (gObject==null || string.IsNullOrEmpty(gObject.name)) ? gameObject.name : gObject.name;
-
-
-            components = GameObjectAllComponents();
         }
+
+
+        //public void GrabNode(GameObject obj)
+        //{
+
+
+        //    LogUtil.ULogDev("UnityNodeOptimized.ctor");
+
+        //    gameObject = obj;
+        //    camera = Camera.main;
+        //    foreach (var cam in Camera.allCameras)
+        //    {
+        //        // skip the main camera
+        //        // we want to use specified camera first then fallback to main camera if no other cameras
+        //        // for further advanced cases, we could test whether the game object is visible within the camera
+        //        if (cam == Camera.main)
+        //        {
+        //            continue;
+        //        }
+        //        if ((cam.cullingMask & (1 << gameObject.layer)) != 0)
+        //        {
+        //            camera = cam;
+        //        }
+        //    }
+
+        //    uipanelComp = gameObject.GetComponent<UIPanel>();
+        //    doInfo = gameObject.GetComponent<DisplayObjectInfo>();
+        //    if (doInfo != null)
+        //    {
+        //        displayObject = doInfo.displayObject;
+        //        gObject = displayObject.gOwner;
+        //    }
+
+        //    name = (gObject==null || string.IsNullOrEmpty(gObject.name)) ? gameObject.name : gObject.name;
+
+
+        //    components = GameObjectAllComponents();
+        //}
 
         //public override AbstractNode getParent()
         //{
@@ -95,6 +137,28 @@ namespace Poco
         //    return children;
         //}
 
+        public string GetName(GameObject go, DisplayObjectInfo doInfo)
+        {
+            string n;
+            if (doInfo != null)
+            {
+                displayObject = doInfo.displayObject;
+                gObject = displayObject.gOwner;
+
+                if(gObject != null)
+                {
+                    n = string.IsNullOrEmpty(gObject.name) ? go.name : gObject.name;
+                    return n;
+
+                }
+            }
+
+            n = go.name;
+            return n;
+
+        }
+
+
         public object GetAttr(string attrName)
         {
             if (gObject != null)
@@ -102,7 +166,7 @@ namespace Poco
                 switch (attrName)
                 {
                     case "name":
-                        return string.IsNullOrEmpty(gObject.name) ? gameObject.name : gObject.name;
+                        return this.name;
                     case "type":
                         return gObject.GetType().Name.Substring(1);
                     case "visible":
@@ -110,17 +174,30 @@ namespace Poco
                     case "pos":
                         {
                             Vector2 vec2 = gObject.LocalToGlobal(Vector2.zero);
-                            return new float[] { vec2.x / (float)Screen.width, vec2.y / (float)Screen.height };
+
+                            float[] floatArr = ArrPool_float.Ins.GetObj();
+                            floatArr[0] = vec2.x / (float)Screen.width;
+                            floatArr[1] = vec2.y / (float)Screen.height;
+                            return floatArr;
                         }
                     case "size":
                         {
                             Rect rect = gObject.TransformRect(new Rect(0, 0, gObject.width, gObject.height), null);
-                            return new float[] { rect.width / (float)Screen.width, rect.height / (float)Screen.height };
+
+                            float[] floatArr = ArrPool_float.Ins.GetObj();
+                            floatArr[0] = rect.width / (float)Screen.width;
+                            floatArr[1] = rect.height / (float)Screen.height;
+                            return floatArr;
                         }
                     case "scale":
                         return floatOneOne;
                     case "anchorPoint":
-                        return new float[] { gObject.pivotX, gObject.pivotY };
+                        {
+                            float[] floatArr = ArrPool_float.Ins.GetObj();
+                            floatArr[0] = gObject.pivotX;
+                            floatArr[1] = gObject.pivotY;
+                            return floatArr;
+                        }
                     case "zOrders":
                         return GameObjectzOrders();
                     case "clickable":
@@ -148,21 +225,26 @@ namespace Poco
                 switch (attrName)
                 {
                     case "name":
-                        return gameObject.name;
+                        return this.name;
                     case "type":
                         return displayObject != null ? displayObject.GetType().Name : DefaultTypeName;
                     case "visible":
-                        return displayObject != null ? (displayObject.stage != null && displayObject.visible) : GameObjectVisible(gameObject);
+                        return GameObjectVisible(gameObject, doInfo, renderer, components);
                     case "pos":
-                        return new float[] { 0.0f, 0.0f };
+                        return floatZeroZero;
                     case "size":
-                        return new float[] { 0.0f, 0.0f };
+                        return floatZeroZero;
                     case "scale":
                         return floatOneOne;
                     case "anchorPoint":
                         return floatZeroZero;
                     case "zOrders":
-                        return new Dictionary<string, object>() { { "local", 0 }, { "global", 0 } };
+                        {
+                            Dictionary<string, float> zOrders = DicPoolSF2.Ins.GetObj();
+                            zOrders["global"] = 0;
+                            zOrders["local"] = 0;
+                            return zOrders;
+                        }
                     case "clickable":
                         return false;
                     case "components":
@@ -201,8 +283,52 @@ namespace Poco
             "_instanceId"
         };
 
-        public Dictionary<string, object> GetPayload()
+        public Dictionary<string, object> GetPayload(GameObject go,string name, List<string> components, DisplayObjectInfo doInfo, Renderer renderer)
         {
+
+            LogUtil.ULogDev("UnityNodeOptimized.ctor");
+            gObject = null;
+            displayObject = null;
+
+
+            this.renderer = renderer;
+            gameObject = go;
+            this.name = name;
+            camera = Camera.main;
+            foreach (var cam in allCams)
+            {
+                // skip the main camera
+                // we want to use specified camera first then fallback to main camera if no other cameras
+                // for further advanced cases, we could test whether the game object is visible within the camera
+                if (cam == Camera.main)
+                {
+                    continue;
+                }
+                if ((cam.cullingMask & (1 << gameObject.layer)) != 0)
+                {
+                    camera = cam;
+                }
+            }
+
+            //this.renderer = renderer;
+
+
+            //if (components.Contains("RectTransform"))
+            //{
+            //    rectTransform = gameObject.GetComponent<RectTransform>();
+            //}
+
+
+            this.doInfo = doInfo;
+
+            if (doInfo != null)
+            {
+                displayObject = doInfo.displayObject;
+                gObject = displayObject.gOwner;
+            }
+
+            this.components = components;
+
             Dictionary<string, object> payload = DicPoolSO16.Ins.GetObj();
 
             foreach (string attrName in attrbutesNames)
@@ -227,38 +353,81 @@ namespace Poco
 
 
             }
+            gameObject = null;
             return payload;
         }
 
-        public static bool GameObjectVisible(GameObject go)
+        public static bool GameObjectVisible(GameObject go, DisplayObjectInfo doInfo, Renderer renderer, List<string> components)
         {
-            bool result;
-
-            if (go.activeInHierarchy)
+            DisplayObject dobj = null;
+            GObject gobj = null;
+            if (doInfo != null)
             {
-                bool light = go.GetComponent<Light>() != null;
-                // bool mesh = components.Contains ("MeshRenderer") && components.Contains ("MeshFilter");
-                bool particle = go.GetComponent<ParticleSystem>() != null && go.GetComponent<ParticleSystemRenderer>() != null;
-                if (light || particle)
+                dobj = doInfo.displayObject;
+                gobj = dobj.gOwner;
+            }
+
+            if (gobj != null)
+            {
+                return gobj.onStage && gobj.visible;
+            }else if ( dobj != null)
+            {
+                return dobj.stage != null && dobj.visible;
+            }else
+            {
+                bool result;
+                if (go.activeInHierarchy)
                 {
-                    result = false;
+                    bool light = components.Contains("Light");
+                    // bool mesh = components.Contains ("MeshRenderer") && components.Contains ("MeshFilter");
+                    bool particle = components.Contains("ParticleSystem") && components.Contains("ParticleSystemRenderer");
+                    if (light || particle)
+                    {
+                        result = false;
+                    }
+                    else
+                    {
+                        result = renderer ? renderer.isVisible : true;
+                    }
                 }
                 else
                 {
-                    Renderer rdr = go.GetComponent<Renderer>();
-                    if (rdr != null)
-                        result = rdr.isVisible;
-                    else
-                        result = true;
+                    result = false;
                 }
+                return result;
             }
-            else
-            {
-                result = false;
-            }
-            UWASDKAgent.PopSample();
-            return result;
+
+
         }
+        //public static bool GameObjectVisible(GameObject go)
+        //{
+        //    bool result;
+
+        //    if (go.activeInHierarchy)
+        //    {
+        //        bool light = go.GetComponent<Light>() != null;
+        //        // bool mesh = components.Contains ("MeshRenderer") && components.Contains ("MeshFilter");
+        //        bool particle = go.GetComponent<ParticleSystem>() != null && go.GetComponent<ParticleSystemRenderer>() != null;
+        //        if (light || particle)
+        //        {
+        //            result = false;
+        //        }
+        //        else
+        //        {
+        //            Renderer rdr = go.GetComponent<Renderer>();
+        //            if (rdr != null)
+        //                result = rdr.isVisible;
+        //            else
+        //                result = true;
+        //        }
+        //    }
+        //    else
+        //    {
+        //        result = false;
+        //    }
+        //    UWASDKAgent.PopSample();
+        //    return result;
+        //}
 
         private int GameObjectLayer()
         {
@@ -284,23 +453,35 @@ namespace Poco
             return tag;
         }
 
-        private List<string> GameObjectAllComponents()
+        public List<string> GameObjectAllComponents(GameObject tmpGo)
         {
-            List<string> components = new List<string>();
-            Component[] allComponents = gameObject.GetComponents<Component>();
+            //List<string> components = new List<string>();
+            List<string> components = ListPool_str.Ins.GetObj();
+            Component[] allComponents = tmpGo.GetComponents<Component>();
             if (allComponents != null)
             {
                 foreach (Component ac in allComponents)
                 {
                     if (ac != null)
                     {
-                        components.Add(ac.GetType().Name);
+                        Type tp = ac.GetType();
+                        if (CompNameDic.ContainsKey(tp))
+                        {
+                            components.Add(CompNameDic[tp]);
+
+                        }
+                        else
+                        {
+                            string compName = tp.Name;
+                            components.Add(compName);
+                            CompNameDic[tp] = compName;
+                        }
+                        //components.Add(ac.name);
                     }
                 }
             }
             return components;
         }
-
         private Dictionary<string, float> GameObjectzOrders()
         {
             float CameraViewportPoint = 0;
@@ -308,10 +489,11 @@ namespace Poco
             {
                 CameraViewportPoint = Math.Abs(camera.WorldToViewportPoint(gameObject.transform.position).z);
             }
-            Dictionary<string, float> zOrders = new Dictionary<string, float>() {
-                { "global", 0f },
-                { "local", -1 * CameraViewportPoint }
-            };
+
+            Dictionary<string, float> zOrders = DicPoolSF2.Ins.GetObj();
+
+            zOrders["global"] = 0f;
+            zOrders["local"] = -1 * CameraViewportPoint;
             return zOrders;
         }
 
@@ -361,9 +543,9 @@ namespace Poco
             }
         }
 
-        public bool IsUIPanel(GameObject go)
+        public bool IsUIPanel(GameObject go, List<string> components)
         {
-            if (go.GetComponent<UIPanel>() != null)
+            if (components.Contains("UIPanel"))
             {
                 return true;
             }
@@ -371,6 +553,16 @@ namespace Poco
             {
                 return false;
             }
+        }
+
+        public Dictionary<string, object> GetPayload(GameObject go, string name, List<string> components, Renderer renderer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Dictionary<string, object> GetPayload(GameObject go)
+        {
+            throw new NotImplementedException();
         }
     }
 
