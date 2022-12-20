@@ -231,7 +231,6 @@ namespace Poco
             UWASDKAgent.PushSample("UNodeOptmzd.GetPayload");
             newItem = true;
 
-
             gameObject = go;
             name = go.name;
 

@@ -107,69 +107,137 @@ namespace Poco.Utils
             Dictionary<string, object> objPayload = nodeDic["payload"] as Dictionary<string, object>;
 
 
-            object nameObj = null;
 
             int attrCnt = 0;
 
-            objPayload.TryGetValue("name", out nameObj);
-            if(nameObj!=null)
+            if(!Config.Instance.blockedAttributes.Contains("name"))
             {
-                AppendQuotationStr(ref sb, nameObj.ToString());
+                object nameObj = null;
+                objPayload.TryGetValue("name", out nameObj);
+                if (nameObj != null)
+                {
+                    AppendQuotationStr(ref sb, nameObj.ToString());
+                }else
+                {
+                    throw new Exception("Failed to get attr name");
+                }
                 attrCnt++;
             }
 
-            object visibleObj = null;
-            objPayload.TryGetValue("visible", out visibleObj);
-            if (visibleObj != null)
+
+            if (!Config.Instance.blockedAttributes.Contains("visible"))
             {
+
                 if (attrCnt > 0) sb.Append(",");
 
-                //AppendQuotationStr(ref sb, visibleObj.ToString());
-                AppendBoolStr(ref sb, (bool)visibleObj);
+                object visibleObj = null;
+                objPayload.TryGetValue("visible", out visibleObj);
+                if (visibleObj != null)
+                {
+                    //AppendQuotationStr(ref sb, visibleObj.ToString());
+                    AppendBoolStr(ref sb, (bool)visibleObj);
+                }
+                else
+                {
+                    throw new Exception("Failed to get attr visible");
+                }
+
                 attrCnt++;
             }
 
-            object posObj = null;
-            objPayload.TryGetValue("pos", out posObj);
-            if (posObj != null)
+
+            if (!Config.Instance.blockedAttributes.Contains("pos"))
             {
                 if (attrCnt > 0) sb.Append(",");
 
-                AppendFloatArr(ref sb, (float[])posObj);
+                object posObj = null;
+                objPayload.TryGetValue("pos", out posObj);
+                if (posObj != null)
+                {
+                    AppendFloatArr(ref sb, (float[])posObj);
+                }else
+                {
+                    throw new Exception("Failed to get attr pos");
+                }
                 attrCnt++;
             }
 
-            object sizeObj = null;
-            objPayload.TryGetValue("size", out sizeObj);
-            if (sizeObj != null)
+
+            if (!Config.Instance.blockedAttributes.Contains("size"))
             {
+
                 if (attrCnt > 0) sb.Append(",");
 
-                AppendFloatArr(ref sb, (float[])sizeObj);
+                object sizeObj = null;
+                objPayload.TryGetValue("size", out sizeObj);
+                if (sizeObj != null)
+                {
+                    AppendFloatArr(ref sb, (float[])sizeObj);
+                }else
+                {
+                    throw new Exception("Failed to get attr size");
+                }
                 attrCnt++;
             }
 
-            object anchorPointObj = null;
-            objPayload.TryGetValue("anchorPoint", out anchorPointObj);
-            if (anchorPointObj != null)
+
+            if (!Config.Instance.blockedAttributes.Contains("anchorPoint"))
             {
                 if (attrCnt > 0) sb.Append(",");
 
-                AppendFloatArr(ref sb, (float[])anchorPointObj);
+                object anchorPointObj = null;
+                objPayload.TryGetValue("anchorPoint", out anchorPointObj);
+                if (anchorPointObj != null)
+                {
+
+                    AppendFloatArr(ref sb, (float[])anchorPointObj);
+                }else
+                {
+                    throw new Exception("Failed to get attr anchorPoint");
+                }
                 attrCnt++;
             }
 
-            object zOrdersObj = null;
-            objPayload.TryGetValue("zOrders", out zOrdersObj);
-            if (zOrdersObj != null)
+
+            if (!Config.Instance.blockedAttributes.Contains("zOrders"))
             {
                 if (attrCnt > 0) sb.Append(",");
 
-                AppendzOrdersArr(ref sb, (Dictionary<string, float>)zOrdersObj);
+
+                object zOrdersObj = null;
+                objPayload.TryGetValue("zOrders", out zOrdersObj);
+                if (zOrdersObj != null)
+                {
+
+                    AppendzOrdersArr(ref sb, (Dictionary<string, float>)zOrdersObj);
+                }else
+                {
+                    throw new Exception("Failed to get attr zOrders");
+                }
+
                 attrCnt++;
+            }
+
+
+            if (!Config.Instance.blockedAttributes.Contains("texture"))
+            {
+                if (attrCnt > 0) sb.Append(",");
+
+                object textureObj = null;
+                objPayload.TryGetValue("texture", out textureObj);
+                if (textureObj != null)
+                {
+
+                    AppendQuotationStr(ref sb, textureObj.ToString());
+                    attrCnt++;
+                }
+                else
+                {
+                    sb.Append("\\\"\\\"");
+                    attrCnt++;
+                }
             }
             sb.Append("}");
-            
             //left_sb.AppendFormat("{0},{1},{2},{3},{4}}", name, visible, pos, size, anchorPoint);
             //left_sb.Append(name_sb);
             //left_sb.Append(",");
