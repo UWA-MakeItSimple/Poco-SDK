@@ -224,15 +224,13 @@ namespace Poco
         };
 
 
-        bool newItem = false;
-        public Dictionary<string, object> GetPayload(GameObject go, List<string> components, Renderer renderer)
+        public Dictionary<string, object> GetPayload(GameObject go,string name, List<string> components, Renderer renderer)
         {
 
             UWASDKAgent.PushSample("UNodeOptmzd.GetPayload");
-            newItem = true;
 
             gameObject = go;
-            name = go.name;
+            this.name = name;
 
             camera = Camera.main;
             foreach (var cam in allCams)
@@ -584,11 +582,9 @@ namespace Poco
                         size[0] = rect_.width / canvasTransform.rect.width;
                         size[1] = rect_.height / canvasTransform.rect.height;
                         LogUtil.ULogDev("GameObjectSizeInScreen - WorldSpace");
-
                         break;
                     default:
                         LogUtil.ULogDev("GameObjectSizeInScreen - default");
-
                         size[0] = rect.width / (float)Screen.width;
                         size[1] = rect.height / (float)Screen.height;
                         break;
@@ -781,6 +777,11 @@ namespace Poco
         public Dictionary<string, object> GetPayload(GameObject go)
         {
             throw new NotImplementedException();
+        }
+
+        public string GetName(GameObject go)
+        {
+            return go.name;
         }
     }
 

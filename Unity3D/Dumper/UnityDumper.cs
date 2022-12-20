@@ -71,8 +71,7 @@ namespace Poco
             //由于IsVisible一定要获取，而通过GetAllComponents来得到IsVisible又是最优的，所以将components也作为必须获取的项。
             List<string> components =UnityNodeGrabber.Instance.GameObjectAllComponents(go);
             Renderer renderer = null;
-
-
+            string name =  UnityNodeGrabber.Instance.GetName(go);
 
             if (components.Contains("Renderer"))
             {
@@ -84,7 +83,7 @@ namespace Poco
             if (Config.Instance.pruningEnabled)
             {
                 UWASDKAgent.PushSample("UDmpOptmzd.Filter");
-                bool shouldVisit = Filter(go, components, protectedByParent, out protectChildren, depth);
+                bool shouldVisit = Filter(go, name, components, protectedByParent, out protectChildren, depth);
                 UWASDKAgent.PopSample();
 
                 if (!shouldVisit)
@@ -115,9 +114,7 @@ namespace Poco
 
 
             //UnityNodeGrabber.Instance.GrabNode(go);
-            Dictionary<string, object> payload = UnityNodeGrabber.Instance.GetPayload(go, components, renderer);
-            string name = (string)UnityNodeGrabber.Instance.GetAttr("name");
-
+            Dictionary<string, object> payload = UnityNodeGrabber.Instance.GetPayload(go, name, components, renderer);
 
             //Dictionary<string, object> result = new Dictionary<string, object>();
             Dictionary<string, object> result = DicPoolSO3.Ins.GetObj();
@@ -138,10 +135,9 @@ namespace Poco
         /// </summary>
         /// <param name="node"></param>
         /// <returns></returns>
-        private bool Filter(GameObject go,List<string> components, bool protectedByParent, out bool protectChildren, int depth)
+        private bool Filter(GameObject go, string name, List<string> components, bool protectedByParent, out bool protectChildren, int depth)
         {
 
-            string name = go.name;
 
             //Strong protect judge
             //---------------------------------------------------------------------
