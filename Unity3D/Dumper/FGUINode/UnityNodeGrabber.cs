@@ -22,7 +22,7 @@ namespace Poco
         private DisplayObjectInfo doInfo = null;
         //private UIPanel uipanelComp;
         static float[] floatOneOne = new float[2] { 1.0f, 1.0f };
-        static float[] floatZeroZero = new float[] { 0.0f, 0.0f };
+        static float[] floatZeroZero = new float[2] { 0.0f, 0.0f };
 
         public UnityNodeGrabber()
         {
