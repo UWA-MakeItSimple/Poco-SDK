@@ -453,11 +453,12 @@ namespace Poco
             return tag;
         }
 
-        public List<string> GameObjectAllComponents(GameObject tmpGo)
+        public List<string> GameObjectAllComponents(GameObject tmpGo, out Component[] componetsArr)
         {
             //List<string> components = new List<string>();
             List<string> components = ListPool_str.Ins.GetObj();
             Component[] allComponents = tmpGo.GetComponents<Component>();
+            componetsArr = allComponents;
             if (allComponents != null)
             {
                 foreach (Component ac in allComponents)
@@ -480,8 +481,19 @@ namespace Poco
                     }
                 }
             }
+
+            //#if UWA_POCO_DEBUG || UNITY_EDITOR
+            //            string s = "";
+            //            foreach(var c in components)
+            //            {
+            //                s += c;
+            //            }
+            //            LogUtil.ULogDev(s);
+            //#endif
             return components;
         }
+
+
         private Dictionary<string, float> GameObjectzOrders()
         {
             float CameraViewportPoint = 0;
