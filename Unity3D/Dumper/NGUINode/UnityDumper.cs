@@ -68,15 +68,22 @@ namespace Poco
 
 
 
+            Component[] componetsArr = null;
             //由于IsVisible一定要获取，而通过GetAllComponents来得到IsVisible又是最优的，所以将components也作为必须获取的项。
-            List<string> components =UnityNodeGrabber.Instance.GameObjectAllComponents(go);
+            List<string> components = UnityNodeGrabber.Instance.GameObjectAllComponents(go, out componetsArr);
             Renderer renderer = null;
+
             string name =  UnityNodeGrabber.Instance.GetName(go);
 
-            if (components.Contains("Renderer"))
-            {
-                renderer = go.GetComponent<Renderer>();
 
+            foreach (var c in componetsArr)
+            {
+                renderer = c as Renderer;
+                if (renderer != null)
+                {
+                    //LogUtil.ULogDev(renderer.GetType().Name);
+                    break;
+                }
             }
 
 

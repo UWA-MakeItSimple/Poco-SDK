@@ -211,7 +211,7 @@ namespace Poco
             this.name = name;
             camera = GetCamera();
             bounds = NGUIMath.CalculateAbsoluteWidgetBounds(gameObject.transform);
-            rect = BoundsToScreenSpace(bounds);
+            rect = BoundsToScreenSpace(bounds, renderer);
             objectPos = WorldToGUIPoint(bounds.center);
             this.components = components;
 
@@ -341,10 +341,11 @@ namespace Poco
             return tag;
         }
 
-        public List<string> GameObjectAllComponents(GameObject tmpGo)
+        public List<string> GameObjectAllComponents(GameObject tmpGo, out Component[] componetsArr)
         {
             List<string> components = ListPool_str.Ins.GetObj();
             Component[] allComponents = tmpGo.GetComponents<Component>();
+            componetsArr = allComponents;
             if (allComponents != null)
             {
                 foreach (Component ac in allComponents)
@@ -453,23 +454,23 @@ namespace Poco
             return null;
         }
 
-        private Rect BoundsToScreenSpace(Bounds bounds)
+        static Vector2[] extentPoints = new Vector2[8];
+        private Rect BoundsToScreenSpace(Bounds bounds, Renderer renderer)
         {
             Vector3 cen;
             Vector3 ext;
-            Renderer renderer = gameObject.GetComponent<Renderer>();
             cen = renderer ? renderer.bounds.center : bounds.center;
             ext = renderer ? renderer.bounds.extents : bounds.extents;
-            Vector2[] extentPoints = new Vector2[8] {
-                WorldToGUIPoint (new Vector3 (cen.x - ext.x, cen.y - ext.y, cen.z - ext.z)),
-                WorldToGUIPoint (new Vector3 (cen.x + ext.x, cen.y - ext.y, cen.z - ext.z)),
-                WorldToGUIPoint (new Vector3 (cen.x - ext.x, cen.y - ext.y, cen.z + ext.z)),
-                WorldToGUIPoint (new Vector3 (cen.x + ext.x, cen.y - ext.y, cen.z + ext.z)),
-                WorldToGUIPoint (new Vector3 (cen.x - ext.x, cen.y + ext.y, cen.z - ext.z)),
-                WorldToGUIPoint (new Vector3 (cen.x + ext.x, cen.y + ext.y, cen.z - ext.z)),
-                WorldToGUIPoint (new Vector3 (cen.x - ext.x, cen.y + ext.y, cen.z + ext.z)),
-                WorldToGUIPoint (new Vector3 (cen.x + ext.x, cen.y + ext.y, cen.z + ext.z))
-            };
+
+            extentPoints[0] = WorldToGUIPoint(new Vector3(cen.x - ext.x, cen.y - ext.y, cen.z - ext.z));
+            extentPoints[1] = WorldToGUIPoint(new Vector3(cen.x + ext.x, cen.y - ext.y, cen.z - ext.z));
+            extentPoints[2] = WorldToGUIPoint(new Vector3(cen.x - ext.x, cen.y - ext.y, cen.z + ext.z));
+            extentPoints[3] = WorldToGUIPoint(new Vector3(cen.x + ext.x, cen.y - ext.y, cen.z + ext.z));
+            extentPoints[4] = WorldToGUIPoint(new Vector3(cen.x - ext.x, cen.y + ext.y, cen.z - ext.z));
+            extentPoints[5] = WorldToGUIPoint(new Vector3(cen.x + ext.x, cen.y + ext.y, cen.z - ext.z));
+            extentPoints[6] = WorldToGUIPoint(new Vector3(cen.x - ext.x, cen.y + ext.y, cen.z + ext.z));
+            extentPoints[7] = WorldToGUIPoint(new Vector3(cen.x + ext.x, cen.y + ext.y, cen.z + ext.z));
+
             Vector2 min = extentPoints[0];
             Vector2 max = extentPoints[0];
             foreach (Vector2 v in extentPoints)
