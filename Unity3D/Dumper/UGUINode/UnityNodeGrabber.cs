@@ -45,14 +45,13 @@ namespace Poco
         public bool protectedByParent;
         public string name;
 
+        static bool CompNameDicInited = false;
+        static Dictionary<Type, string> CompNameDic = new Dictionary<Type, string>();
+
         public UnityNodeGrabber()
         {
 
         }
-
-
-        static bool CompNameDicInited = false;
-        static Dictionary<Type, string> CompNameDic = new Dictionary<Type, string>();
 
         public void Init()
         {
@@ -88,14 +87,6 @@ namespace Poco
                 //CompNameDic.TryAdd(typeof(ApplicationManager), "ApplicationManager");
                 CompNameDicInited = true;
             }
-
-
-            //CompNameDic.Add(typeof(Transform),"Transform");
-            //CompNameDic.Add(typeof(Transform),"Transform");
-            //CompNameDic.Add(typeof(Transform),"Transform");
-            //CompNameDic.Add(typeof(Transform),"Transform");
-            //CompNameDic.Add(typeof(Transform),"Transform");
-
         }
 
 
@@ -259,8 +250,6 @@ namespace Poco
             objectPos = renderer ? WorldToGUIPoint(camera, renderer.bounds.center) : Vector2.zero;
             this.components = components;
 
-
-
             //Dictionary<string, object> payload = new Dictionary<string, object>();
             Dictionary<string, object> payload = DicPoolSO16.Ins.GetObj();
 
@@ -414,11 +403,12 @@ namespace Poco
 
 
         public static HashSet<string> compTypes = new HashSet<string>();
-        public List<string> GameObjectAllComponents(GameObject tmpGo)
+        public List<string> GameObjectAllComponents(GameObject tmpGo, out Component[] componetsArr)
         {
             //List<string> components = new List<string>();
             List<string> components = ListPool_str.Ins.GetObj();
             Component[] allComponents = tmpGo.GetComponents<Component>();
+            componetsArr = allComponents;
             if (allComponents != null)
             {
                 foreach (Component ac in allComponents)
@@ -441,6 +431,15 @@ namespace Poco
                     }
                 }
             }
+
+//#if UWA_POCO_DEBUG || UNITY_EDITOR
+//            string s = "";
+//            foreach(var c in components)
+//            {
+//                s += c;
+//            }
+//            LogUtil.ULogDev(s);
+//#endif
             return components;
         }
 
@@ -573,7 +572,7 @@ namespace Poco
                         Rect _rect = RectTransformUtility.PixelAdjustRect(rectTransform, rootCanvas);
                         size[0] = _rect.width * rootCanvas.scaleFactor / (float)Screen.width;
                         size[1] = _rect.height * rootCanvas.scaleFactor / (float)Screen.height;
-                        LogUtil.ULogDev("GameObjectSizeInScreen - ScreenSpaceCamera");
+                        //LogUtil.ULogDev("GameObjectSizeInScreen - ScreenSpaceCamera");
                         break;
                     case RenderMode.WorldSpace:
                         Rect rect_ = rectTransform.rect;
@@ -581,10 +580,10 @@ namespace Poco
                         //size = new float[] { rect_.width / canvasTransform.rect.width, rect_.height / canvasTransform.rect.height };
                         size[0] = rect_.width / canvasTransform.rect.width;
                         size[1] = rect_.height / canvasTransform.rect.height;
-                        LogUtil.ULogDev("GameObjectSizeInScreen - WorldSpace");
+                        //LogUtil.ULogDev("GameObjectSizeInScreen - WorldSpace");
                         break;
                     default:
-                        LogUtil.ULogDev("GameObjectSizeInScreen - default");
+                        //LogUtil.ULogDev("GameObjectSizeInScreen - default");
                         size[0] = rect.width / (float)Screen.width;
                         size[1] = rect.height / (float)Screen.height;
                         break;
@@ -592,14 +591,14 @@ namespace Poco
             }
             else
             {
-                LogUtil.ULogDev("GameObjectSizeInScreen - else");
+                //LogUtil.ULogDev("GameObjectSizeInScreen - else");
 
                 size[0] = rect.width / (float)Screen.width;
                 size[1] = rect.height / (float)Screen.height;
             }
             UWASDKAgent.PopSample();
 
-            LogUtil.ULogDev("GameObjectSizeInScreen: " + gameObject.name + ":  " + size[0] + ", " +size[1]);
+            //LogUtil.ULogDev("GameObjectSizeInScreen: " + gameObject.name + ":  " + size[0] + ", " +size[1]);
 
             return size;
         }
@@ -647,39 +646,52 @@ namespace Poco
         HashSet<string> ImageComps = new HashSet<string>() { "Image", "RawImage", "SpriteRenderer", "Renderer" };
         private string GetImageSourceTexture()
         {
-            bool hasImage = false;
-            foreach(var comp in components)
+            //bool hasImage = false;
+            //foreach(var comp in components)
+            //{
+            //    if (ImageComps.Contains(comp))
+            //        hasImage = true;
+            //}
+
+
+            //if (!hasImage) return null;
+
+            if (components.Contains("Image"))
             {
-                if (ImageComps.Contains(comp))
-                    hasImage = true;
+                Image image = gameObject.GetComponent<Image>();
+                if (image != null && image.sprite != null)
+                {
+                    return image.sprite.name;
+                }
             }
 
 
-            if (!hasImage) return null;
-
-            Image image = gameObject.GetComponent<Image>();
-            if (image != null && image.sprite != null)
+            if (components.Contains("RawImage"))
             {
-                return image.sprite.name;
+                RawImage rawImage = gameObject.GetComponent<RawImage>();
+                if (rawImage != null && rawImage.texture != null)
+                {
+                    return rawImage.texture.name;
+                }
             }
 
-            RawImage rawImage = gameObject.GetComponent<RawImage>();
-            if (rawImage != null && rawImage.texture != null)
+            if (components.Contains("SpriteRenderer"))
             {
-                return rawImage.texture.name;
+                SpriteRenderer spriteRenderer = gameObject.GetComponent<SpriteRenderer>();
+                if (spriteRenderer != null && spriteRenderer.sprite != null)
+                {
+                    return spriteRenderer.sprite.name;
+                }
             }
 
-            SpriteRenderer spriteRenderer = gameObject.GetComponent<SpriteRenderer>();
-            if (spriteRenderer != null && spriteRenderer.sprite != null)
-            {
-                return spriteRenderer.sprite.name;
-            }
-
-            Renderer render = gameObject.GetComponent<Renderer>();
+            //if (components.Contains("Renderer"))
+            //{
+            //    Renderer render = gameObject.GetComponent<Renderer>();
             if (renderer != null && renderer.material != null)
             {
                 return renderer.material.color.ToString();
             }
+            //}
 
             return null;
         }
