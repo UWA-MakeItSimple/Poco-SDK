@@ -73,7 +73,8 @@ namespace Poco.Utils
         {
             ListPool_GameObject.Ins.ReleaseAll();
             ListPool_object.Ins.ReleaseAll();
-            ListPool_str.Ins.ReleaseAll();
+            ListPool_str.Ins.ReleaseAll();            
+			ListPool_Component.Ins.ReleaseAll();
 
         }
     }
@@ -81,6 +82,11 @@ namespace Poco.Utils
     class ListPool_GameObject : ListPool<GameObject>
     {
         public static ListPool_GameObject Ins = new ListPool_GameObject();
+    }
+
+    class ListPool_Component : ListPool<Component>
+    {
+        public static ListPool_Component Ins = new ListPool_Component();
     }
 
     class ListPool_object : ListPool<object>
