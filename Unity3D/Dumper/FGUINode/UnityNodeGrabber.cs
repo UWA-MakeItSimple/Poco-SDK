@@ -6,7 +6,7 @@ using Poco.Utils;
 
 namespace Poco
 {
-    public class UnityNodeGrabber : Singleton<UnityNodeGrabber>, INodeGrabber
+    public class UnityNodeGrabber : Poco.Utils.Singleton<UnityNodeGrabber>, INodeGrabber
     {
         public static string DefaultTypeName = "GameObject";
         private GameObject gameObject;

@@ -6,7 +6,7 @@ using Poco.Utils;
 
 namespace Poco
 {
-    public class UnityNodeGrabber : Singleton<UnityNodeGrabber> , INodeGrabber
+    public class UnityNodeGrabber : Poco.Utils.Singleton<UnityNodeGrabber> , INodeGrabber
     {
         public static Dictionary<string, string> TypeNames = new Dictionary<string, string>() {
             { "Text", "Text" },

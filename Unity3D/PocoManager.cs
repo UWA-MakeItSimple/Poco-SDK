@@ -49,6 +49,10 @@ namespace Poco
 
 
 
+
+
+#if UWA_POCO_DEBUG
+
 #if UNITY_EDITOR
 
         string remoteCallMsg = "{\"method\": \"Dump\", \"params\": [true], \"jsonrpc\": \"2.0\", \"id\": \"10630993-7bd4-404c-b6b2-c99f8a26bb8f\"}";
@@ -95,8 +99,7 @@ namespace Poco
             GUILayout.EndVertical();
             GUILayout.EndArea();
         }
-
-#elif UWA_POCO_DEBUG
+#elif
         private void OnGUI()
         {
             GUIStyle btnStyle = new GUIStyle("Button");
@@ -131,6 +134,7 @@ namespace Poco
             GUILayout.EndVertical();
             GUILayout.EndArea();
         }
+#endif
 #endif
 
         void Awake()
