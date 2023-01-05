@@ -18,7 +18,7 @@ namespace Poco
 		bool IsUIPanel(GameObject go);
 	}
 	 
-	public class RootNodeGrabber : Singleton<RootNodeGrabber>, INodeGrabber
+	public class RootNodeGrabber : Poco.Utils.Singleton<RootNodeGrabber>, INodeGrabber
 	{
 
 		static Dictionary<string, object> rootAttrs = new Dictionary<string, object>() {

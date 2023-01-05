@@ -5,7 +5,7 @@ using Poco.Utils;
 
 namespace Poco
 {
-    public class UnityDumper : Singleton<UnityDumper>, IDumper<GameObject>
+    public class UnityDumper : Poco.Utils.Singleton<UnityDumper>, IDumper<GameObject>
     {
 
         public UnityDumper()
