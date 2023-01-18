@@ -51,7 +51,7 @@ namespace Poco.Utils
         StringBuilder ExceptionInfoSB = new StringBuilder();
         public string CatchException(bool CatStackTrace = false)
         {
-            if (!opened) return;
+            if (!opened) return null;
 
             if (exceptionInfos != null && exceptionInfos.Count > 0)
             {
