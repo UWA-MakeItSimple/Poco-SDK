@@ -59,6 +59,7 @@ namespace Poco
             DontDestroyOnLoad(this);
             prot = new SimpleProtocolFilter();
             rpc = new RPCParser();
+
             rpc.addRpcMethod("isVRSupported", vr_support.isVRSupported);
             rpc.addRpcMethod("hasMovementFinished", vr_support.IsQueueEmpty);
             rpc.addRpcMethod("RotateObject", vr_support.RotateObject);
@@ -76,7 +77,8 @@ namespace Poco
             rpc.addRpcMethod("SetBlockedAttributes", SetBlockedAttributes);
             rpc.addRpcMethod("CollectWeakWhitelist", CollectWeakWhitelist);
             rpc.addRpcMethod("GetDumpInfo", GetDumpInfo);
-
+            rpc.addRpcMethod("CatchExc", CatchExc);
+            rpc.addRpcMethod("SetCatchExcEnabled", SetCatchExcEnabled);
 
 
             mRunning = true;
@@ -318,8 +320,47 @@ namespace Poco
             object result = Dump(new List<object> { true });
 
             return result;
+        }
+
+
+        [RPC]
+        private object CatchExc(List<object> param)
+        {
+
+
+
+            var CatStackTrace = false;
+            if (param.Count > 0)
+            {
+                CatStackTrace = (bool)param[0];
+            }
+            return ExceptionHandler.Instance.CatchException(CatStackTrace);
+        }
+
+
+        [RPC]
+        private object SetCatchExcEnabled(List<object> param)
+        {
+
+            var enabled = false;
+            if (param.Count > 0)
+            {
+                enabled = (bool)param[0];
+            }
+
+            if(enabled)
+            {
+                ExceptionHandler.Instance.Open();
+
+            }else
+            {
+                ExceptionHandler.Instance.Close();
+            }
+
+            return null;
 
         }
+
 
         #endregion
 
@@ -393,12 +434,15 @@ namespace Poco
         {
             // stop listening thread
             stopListening();
+            ExceptionHandler.Instance.Close();
         }
 
         void OnDestroy()
         {
             // stop listening thread
             stopListening();
+            ExceptionHandler.Instance.Close();
+
         }
 
     }
