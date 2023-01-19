@@ -792,12 +792,20 @@ namespace UWA.LitJson
                 return;
             }
 
-            if (obj is IDictionary dictionary) {
+            if (obj is IDictionary) {
+                IDictionary dictionary = (IDictionary)obj;
+
                 writer.WriteObjectStart ();
                 foreach (DictionaryEntry entry in dictionary) {
-                    var propertyName = entry.Key is string key ?
-                        key
-                        : Convert.ToString(entry.Key, CultureInfo.InvariantCulture);
+                    string propertyName = "";
+                    if (entry.Key is string)
+                    {
+                        propertyName = entry.Key as string;
+                    }else
+                    {
+                        propertyName = Convert.ToString(entry.Key, CultureInfo.InvariantCulture);
+                    }
+
                     writer.WritePropertyName (propertyName);
                     WriteValue (entry.Value, writer, writer_is_private,
                                 depth + 1);

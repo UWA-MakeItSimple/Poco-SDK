@@ -947,10 +947,13 @@ namespace Poco
                         AppendStr(responseBuilder, (string)resultArr[i]);
 
                     }
-                    else if (tp == typeof(Int32))
+                    else if (tp == typeof(int))
                     {
-                        AppendInt(responseBuilder, (Int32)resultArr[i]);
+                        AppendInt(responseBuilder, (int)resultArr[i]);
 
+                    }else
+                    {
+                        throw new Exception("Unexpted result value type");
                     }
 
 
