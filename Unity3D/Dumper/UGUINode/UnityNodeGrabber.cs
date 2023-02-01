@@ -481,36 +481,46 @@ namespace Poco
 
         private float[] GameObjectAnchorInScreen(Renderer renderer, Rect rect, Vector3 objectPos)
         {
+
+            //UGUI pos的计算是获取的UI元素的中心点，也就是按照AnchorPoint为 { 0.5f, 0.5f } 的前提来计算的。
             float[] defaultValue = { 0.5f, 0.5f };
+
+
             if (rectTransform)
             {
-                Vector2 data = rectTransform.pivot;
-                defaultValue[0] = data[0];
-                defaultValue[1] = 1 - data[1];
+                //Vector2 data = rectTransform.pivot;
+                //defaultValue[0] = data[0];
+                //defaultValue[1] = 1 - data[1];
                 return defaultValue;
-            }
-            if (!renderer)
+            }else
             {
-                //<Modified> some object do not have renderer
-                return defaultValue;
+                if (!renderer)
+                {
+                    //<Modified> some object do not have renderer
+                    return defaultValue;
+                }else
+                {
+                    float[] anchor = { (objectPos.x - rect.xMin) / rect.width, (objectPos.y - rect.yMin) / rect.height };
+                    if (Double.IsNaN(anchor[0]) || Double.IsNaN(anchor[1]))
+                    {
+                        return defaultValue;
+                    }
+                    else if (Double.IsPositiveInfinity(anchor[0]) || Double.IsPositiveInfinity(anchor[1]))
+                    {
+                        return defaultValue;
+                    }
+                    else if (Double.IsNegativeInfinity(anchor[0]) || Double.IsNegativeInfinity(anchor[1]))
+                    {
+                        return defaultValue;
+                    }
+                    else
+                    {
+                        return anchor;
+                    }
+                }
+               
             }
-            float[] anchor = { (objectPos.x - rect.xMin) / rect.width, (objectPos.y - rect.yMin) / rect.height };
-            if (Double.IsNaN(anchor[0]) || Double.IsNaN(anchor[1]))
-            {
-                return defaultValue;
-            }
-            else if (Double.IsPositiveInfinity(anchor[0]) || Double.IsPositiveInfinity(anchor[1]))
-            {
-                return defaultValue;
-            }
-            else if (Double.IsNegativeInfinity(anchor[0]) || Double.IsNegativeInfinity(anchor[1]))
-            {
-                return defaultValue;
-            }
-            else
-            {
-                return anchor;
-            }
+            
         }
 
         private string GetImageSourceTexture()
