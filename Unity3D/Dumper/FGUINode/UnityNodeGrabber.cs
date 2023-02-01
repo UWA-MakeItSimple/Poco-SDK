@@ -120,7 +120,8 @@ namespace Poco
                     case "scale":
                         return floatOneOne;
                     case "anchorPoint":
-                        return new float[] { gObject.pivotX, gObject.pivotY };
+                        return floatZeroZero;
+                        //return new float[] { gObject.pivotX, gObject.pivotY };
                     case "zOrders":
                         return GameObjectzOrders();
                     case "clickable":
