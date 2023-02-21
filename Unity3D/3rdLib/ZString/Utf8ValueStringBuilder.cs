@@ -90,7 +90,7 @@ namespace Cysharp.Text
             }
             else
             {
-                buf = ArrayPool<byte>.Shared.Rent(DefaultBufferSize);
+                buf = System.Buffers.ArrayPool<byte>.Shared.Rent(DefaultBufferSize);
             }
 
             buffer = buf;
@@ -108,7 +108,7 @@ namespace Cysharp.Text
             {
                 if (buffer.Length != ThreadStaticBufferSize)
                 {
-                    ArrayPool<byte>.Shared.Return(buffer);
+                    System.Buffers.ArrayPool<byte>.Shared.Return(buffer);
                 }
                 buffer = null;
                 index = 0;
@@ -140,12 +140,12 @@ namespace Cysharp.Text
                 nextSize = Math.Max(nextSize, index + sizeHint);
             }
 
-            var newBuffer = ArrayPool<byte>.Shared.Rent(nextSize);
+            var newBuffer = System.Buffers.ArrayPool<byte>.Shared.Rent(nextSize);
 
             buffer.CopyTo(newBuffer, 0);
             if (buffer.Length != ThreadStaticBufferSize)
             {
-                ArrayPool<byte>.Shared.Return(buffer);
+                System.Buffers.ArrayPool<byte>.Shared.Return(buffer);
             }
 
             buffer = newBuffer;

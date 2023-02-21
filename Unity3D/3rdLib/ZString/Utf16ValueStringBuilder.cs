@@ -83,7 +83,7 @@ namespace Cysharp.Text
             }
             else
             {
-                buf = ArrayPool<char>.Shared.Rent(DefaultBufferSize);
+                buf = System.Buffers.ArrayPool<char>.Shared.Rent(DefaultBufferSize);
             }
 
             buffer = buf;
@@ -101,7 +101,7 @@ namespace Cysharp.Text
             {
                 if (buffer.Length != ThreadStaticBufferSize)
                 {
-                    ArrayPool<char>.Shared.Return(buffer);
+                    System.Buffers.ArrayPool<char>.Shared.Return(buffer);
                 }
                 buffer = null;
                 index = 0;
@@ -134,12 +134,12 @@ namespace Cysharp.Text
                 nextSize = Math.Max(nextSize, index + sizeHint);
             }
 
-            var newBuffer = ArrayPool<char>.Shared.Rent(nextSize);
+            var newBuffer = System.Buffers.ArrayPool<char>.Shared.Rent(nextSize);
 
             buffer.CopyTo(newBuffer, 0);
             if (buffer.Length != ThreadStaticBufferSize)
             {
-                ArrayPool<char>.Shared.Return(buffer);
+                System.Buffers.ArrayPool<char>.Shared.Return(buffer);
             }
 
             buffer = newBuffer;
@@ -342,7 +342,7 @@ namespace Cysharp.Text
             }
 
             var newSize = index + value.Length * count;
-            var newBuffer = ArrayPool<char>.Shared.Rent(Math.Max(DefaultBufferSize, newSize));
+            var newBuffer = System.Buffers.ArrayPool<char>.Shared.Rent(Math.Max(DefaultBufferSize, newSize));
 
             buffer.AsSpan(0, index).CopyTo(newBuffer);
             int newBufferIndex = index;
@@ -360,7 +360,7 @@ namespace Cysharp.Text
             {
                 if (buffer != null)
                 {
-                    ArrayPool<char>.Shared.Return(buffer);
+                    System.Buffers.ArrayPool<char>.Shared.Return(buffer);
                 }
             }
 
@@ -478,7 +478,7 @@ namespace Cysharp.Text
             if (matchCount == 0)
                 return;
 
-            var newBuffer = ArrayPool<char>.Shared.Rent(Math.Max(DefaultBufferSize, Length + (newValue.Length - oldValue.Length) * matchCount));
+            var newBuffer = System.Buffers.ArrayPool<char>.Shared.Rent(Math.Max(DefaultBufferSize, Length + (newValue.Length - oldValue.Length) * matchCount));
 
             buffer.AsSpan(0, startIndex).CopyTo(newBuffer);
             int newBufferIndex = startIndex;
@@ -502,7 +502,7 @@ namespace Cysharp.Text
 
             if (buffer.Length != ThreadStaticBufferSize)
             {
-                ArrayPool<char>.Shared.Return(buffer);
+                System.Buffers.ArrayPool<char>.Shared.Return(buffer);
             }
             buffer = newBuffer;
             index = newBufferIndex;

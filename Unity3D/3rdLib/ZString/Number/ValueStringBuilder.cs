@@ -24,7 +24,7 @@ namespace System.Text
 
         public ValueStringBuilder(int initialCapacity)
         {
-            _arrayToReturnToPool = ArrayPool<char>.Shared.Rent(initialCapacity);
+            _arrayToReturnToPool = System.Buffers.ArrayPool<char>.Shared.Rent(initialCapacity);
             _chars = _arrayToReturnToPool;
             _pos = 0;
         }
@@ -283,7 +283,7 @@ namespace System.Text
             Debug.Assert(additionalCapacityBeyondPos > 0);
             Debug.Assert(_pos > _chars.Length - additionalCapacityBeyondPos, "Grow called incorrectly, no resize is needed.");
 
-            char[] poolArray = ArrayPool<char>.Shared.Rent(Math.Max(_pos + additionalCapacityBeyondPos, _chars.Length * 2));
+            char[] poolArray = System.Buffers.ArrayPool<char>.Shared.Rent(Math.Max(_pos + additionalCapacityBeyondPos, _chars.Length * 2));
 
             _chars.Slice(0, _pos).CopyTo(poolArray);
 
@@ -291,7 +291,7 @@ namespace System.Text
             _chars = _arrayToReturnToPool = poolArray;
             if (toReturn != null)
             {
-                ArrayPool<char>.Shared.Return(toReturn);
+                System.Buffers.ArrayPool<char>.Shared.Return(toReturn);
             }
         }
 
@@ -302,7 +302,7 @@ namespace System.Text
             this = default; // for safety, to avoid using pooled array if this instance is erroneously appended to again
             if (toReturn != null)
             {
-                ArrayPool<char>.Shared.Return(toReturn);
+                System.Buffers.ArrayPool<char>.Shared.Return(toReturn);
             }
         }
     }

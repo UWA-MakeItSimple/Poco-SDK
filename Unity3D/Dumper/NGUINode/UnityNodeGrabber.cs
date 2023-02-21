@@ -538,18 +538,18 @@ namespace Poco
             }
         }
 
-        public bool IsUIPanel()
-        {
-            if (gameObject.GetComponent<UIPanel>() != null)
-            {
-                return true;
+        //public bool IsUIPanel()
+        //{
+        //    if (gameObject.GetComponent<UIPanel>() != null)
+        //    {
+        //        return true;
 
-            }
-            else
-            {
-                return false;
-            }
-        }
+        //    }
+        //    else
+        //    {
+        //        return false;
+        //    }
+        //}
 
 
         public Dictionary<string, object> GetPayload(GameObject go)
@@ -559,7 +559,16 @@ namespace Poco
 
         public bool IsUIPanel(GameObject go, List<string> components)
         {
-            throw new NotImplementedException();
+            if (components.Contains("UIPanel"))
+            {
+                return true;
+
+            }
+            else
+            {
+                return false;
+            }
+
         }
     }
 
