@@ -20,7 +20,7 @@ namespace Poco
     public class PocoManager : MonoBehaviour
     {
         
-        public const string versionCode = "UWA-2.0";
+        public const string versionCode = "UWA-2.0.1";
         public int port = 5001;
         private bool mRunning;
         public AsyncTcpServer server = null;

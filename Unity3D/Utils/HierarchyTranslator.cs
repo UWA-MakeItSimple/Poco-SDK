@@ -218,6 +218,24 @@ namespace Poco.Utils
                 attrCnt++;
             }
 
+            if (!Config.Instance.blockedAttributes.Contains("text"))
+            {
+                if (attrCnt > 0) sb.Append(",");
+
+                object textObj = null;
+                objPayload.TryGetValue("text", out textObj);
+                if (textObj != null)
+                {
+                    AppendQuotationStr(ref sb, textObj.ToString());
+                }
+                else
+                {
+                    sb.Append("\\\"\\\"");
+                }
+                attrCnt++;
+
+            }
+
 
             if (!Config.Instance.blockedAttributes.Contains("texture"))
             {
@@ -237,6 +255,25 @@ namespace Poco.Utils
                     attrCnt++;
                 }
             }
+
+            if (!Config.Instance.blockedAttributes.Contains("_instanceId"))
+            {
+                if (attrCnt > 0) sb.Append(",");
+
+                object iIdObj = null;
+                objPayload.TryGetValue("_instanceId", out iIdObj);
+                if (iIdObj != null)
+                {
+                    sb.Append(iIdObj.ToString());
+                }
+                else
+                {
+                    //do nothing
+                }
+                attrCnt++;
+            }
+
+
             sb.Append("}");
             //left_sb.AppendFormat("{0},{1},{2},{3},{4}}", name, visible, pos, size, anchorPoint);
             //left_sb.Append(name_sb);
@@ -402,6 +439,12 @@ namespace Poco.Utils
 
             }
         }
+
+
+        //private static void AppendintStr(ref Utf8ValueStringBuilder m_sb, string str)
+        //{
+        //    m_sb.Append(str);
+        //}
 
         private static void AppendQuotationStr(ref Utf8ValueStringBuilder m_sb, string str)
         {

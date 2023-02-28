@@ -28,7 +28,9 @@ namespace Poco
             AttrCannotBlock.Add("pos");
             AttrCannotBlock.Add("size");
             AttrCannotBlock.Add("anchorPoint");
-            AttrCannotBlock.Add("text");
+            //AttrCannotBlock.Add("text");
+            //AttrCannotBlock.Add("_instanceId");
+
         }
 
         public HashSet<string> AttrCannotBlock = new HashSet<string>();

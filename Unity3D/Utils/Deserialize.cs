@@ -248,6 +248,9 @@ namespace Poco.Utils
             if (!blockAttrs.Contains("zOrders"))
                 payloadDic["zOrders"] = StrToZOrdersDic(payloadList[attrCnt++]);
 
+            if (!blockAttrs.Contains("text"))
+                payloadDic["text"] = TrimQuatation(payloadList[attrCnt++]);
+
             if (!blockAttrs.Contains("texture"))
             {
                 string texStr = TrimQuatation(payloadList[attrCnt++]);
@@ -255,8 +258,18 @@ namespace Poco.Utils
                 {
                     payloadDic["texture"] = texStr;
                 }
-
             }
+
+            if (!blockAttrs.Contains("_instanceId"))
+            {
+
+                string tmp = payloadList[attrCnt++];
+                if(!string.IsNullOrEmpty(tmp))
+                {
+                    payloadDic["_instanceId"] = int.Parse(tmp);
+                }
+            }
+
 
 
             nodeDic["name"] = TrimQuatation(payloadList[0]);
