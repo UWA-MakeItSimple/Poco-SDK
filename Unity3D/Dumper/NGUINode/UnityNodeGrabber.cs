@@ -236,13 +236,15 @@ namespace Poco
         private string GuessObjectTypeFromComponentNames(List<string> components)
         {
 
-            foreach (string name in components)
+            for (int i = components.Count - 1; i >= 0; i--)
             {
-                if (TypeNames.ContainsKey(name))
+                string tmp = components[i];
+                if (TypeNames.ContainsKey(tmp))
                 {
-                    return TypeNames[name];
+                    return TypeNames[tmp];
                 }
             }
+
             return DefaultTypeName;
         }
 
