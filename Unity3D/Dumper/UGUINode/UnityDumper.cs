@@ -17,8 +17,11 @@ namespace Poco
         {
             List<GameObject> firstLevelNodes = GetFirstLevelNodes();
 
+            UnityNodeGrabber.Instance.Init();
+
+
             //CreateRoot
-            Dictionary<string, object> payload = RootNodeGrabber.Instance.GetPayload();
+            Dictionary<string, object> payload = RootNodeGrabber.Instance.GetPayload(null);
 
             //Dictionary<string, object> result = new Dictionary<string, object>();
 
@@ -54,7 +57,7 @@ namespace Poco
         {
             UWASDKAgent.PushSample("UDmpOptmzd.dumpHImpl(node,only,pBP)");
 
-            LogUtil.ULogDev("UnityDmpOptimized.dumpHierarchyImpl");
+            //LogUtil.ULogDev("UnityDmpOptimized.dumpHierarchyImpl");
 
             if (go == null)
             {
@@ -63,15 +66,62 @@ namespace Poco
 
             bool protectChildren = false;
 
-            if(Config.Instance.pruningEnabled)
+
+            Component[] componetsArr = null;
+            //由于IsVisible一定要获取，而通过GetAllComponents来得到IsVisible又是最优的，所以将components也作为必须获取的项。
+            List<string> components =UnityNodeGrabber.Instance.GameObjectAllComponents(go, out componetsArr);
+            Renderer renderer = null;
+            string name =  UnityNodeGrabber.Instance.GetName(go);
+
+
+            foreach(var c in componetsArr)
+            {
+                //if(typeof(Renderer).IsAssignableFrom(c.GetType()))
+                //{
+                //    renderer = (Renderer)c;
+                //}
+
+                renderer =c as Renderer;
+                if (renderer != null)
+                {
+                    //LogUtil.ULogDev(renderer.GetType().Name);
+                    break;
+                }
+            }
+
+
+//#if UWA_POCO_DEBUG || UNITY_EDITOR
+
+//            renderer = go.GetComponent<Renderer>();
+//            if(renderer)
+//            {
+//                LogUtil.ULogDev(renderer.GetType().Name);
+//            }
+
+//#endif
+//            if (components.Contains("Renderer"))
+//            {
+//                renderer = go.GetComponent<Renderer>();
+
+//            }
+
+
+            if (Config.Instance.pruningEnabled)
             {
                 UWASDKAgent.PushSample("UDmpOptmzd.Filter");
-                bool shouldVisit = Filter(go, protectedByParent, out protectChildren, depth);
+                bool shouldVisit = Filter(go, name, components, protectedByParent, out protectChildren, depth);
                 UWASDKAgent.PopSample();
 
                 if (!shouldVisit)
                     return null;
             }
+
+            if (onlyVisibleNode && !UnityNodeGrabber.GameObjectVisible(go, renderer, components))
+            {
+                return null;
+            }
+            
+
 
             //List<object> children = new List<object>();
             List<object> children = ListPool_object.Ins.GetObj();
@@ -80,7 +130,7 @@ namespace Poco
             foreach (Transform trans in go.transform)
             {
                 GameObject child = trans.gameObject;
-                if (!onlyVisibleNode || UnityNodeGrabber.GameObjectVisible(child) )
+                //if (!onlyVisibleNode || UnityNodeGrabber.GameObjectVisible(child) )
                 {
                     var childResult = dfsDump(child, onlyVisibleNode, protectChildren, depth);
                     if (childResult != null)
@@ -89,10 +139,8 @@ namespace Poco
             }
 
 
-            UnityNodeGrabber.Instance.GrabNode(go);
-            Dictionary<string, object> payload = UnityNodeGrabber.Instance.GetPayload();
-            string name = (string)UnityNodeGrabber.Instance.GetAttr("name");
-
+            //UnityNodeGrabber.Instance.GrabNode(go);
+            Dictionary<string, object> payload = UnityNodeGrabber.Instance.GetPayload(go, name, components, renderer);
 
             //Dictionary<string, object> result = new Dictionary<string, object>();
             Dictionary<string, object> result = DicPoolSO3.Ins.GetObj();
@@ -113,16 +161,15 @@ namespace Poco
         /// </summary>
         /// <param name="node"></param>
         /// <returns></returns>
-        private bool Filter(GameObject go,bool protectedByParent, out bool protectChildren, int depth)
+        private bool Filter(GameObject go, string name, List<string> components, bool protectedByParent, out bool protectChildren, int depth)
         {
 
-            string name = go.name;
 
             //Strong protect judge
             //---------------------------------------------------------------------
 
             UWASDKAgent.PushSample("UDmpOptmzd.StringProtect");
-            bool tag1 = StrongProtect(go, name);
+            bool tag1 = StrongProtect(go,components, name);
             UWASDKAgent.PopSample();
 
             if (tag1)
@@ -174,9 +221,9 @@ namespace Poco
         /// </summary>
         /// <param name="node"></param>
         /// <returns></returns>
-        private bool StrongProtect(GameObject go, string name)
+        private bool StrongProtect(GameObject go, List<string> components, string name)
         {
-            if (UnityNodeGrabber.Instance.IsUIPanel(go))
+            if (UnityNodeGrabber.Instance.IsUIPanel(go, components))
             {
                 return true;
             }

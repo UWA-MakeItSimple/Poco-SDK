@@ -11,11 +11,11 @@ namespace Poco
 		object GetAttr(string attrName);
 		//void setAttr(string attrName, object val);
 
-
-		Dictionary<string, object> GetPayload();
+		Dictionary<string, object> GetPayload(GameObject go, string name, List<string> components, Renderer renderer);
+		Dictionary<string, object> GetPayload(GameObject go);
 
 		//Dictionary<string, object> enumerateAttrs();
-		bool IsUIPanel(GameObject go);
+		bool IsUIPanel(GameObject go, List<string> components);
 	}
 	 
 	public class RootNodeGrabber : Poco.Utils.Singleton<RootNodeGrabber>, INodeGrabber
@@ -29,7 +29,7 @@ namespace Poco
 			{ "size", new float[2]{ 0.0f, 0.0f } },
 			{ "scale", new float[2]{ 1.0f, 1.0f } },
 			{ "anchorPoint", new float[2]{ 0.5f, 0.5f } },
-			{ "zOrders", new Dictionary<string, float> (){ { "local", 0 }, { "global", 0 } } }
+			{ "zOrders", new Dictionary<string, float> (){ { "global", 0 }, { "local", 0 } } }
 		};
 
 		//public Dictionary<string, object> enumerateAttrs()
@@ -42,17 +42,23 @@ namespace Poco
             throw new NotImplementedException();
         }
 
-        public Dictionary<string, object> GetPayload()
+
+        public Dictionary<string, object> GetPayload(GameObject go)
         {
 			return rootAttrs;
 		}
 
-		public bool IsUIPanel()
+        public Dictionary<string, object> GetPayload(GameObject go, string name,  List<string> components, Renderer renderer)
         {
             throw new NotImplementedException();
         }
 
-        public bool IsUIPanel(GameObject go)
+        public bool IsUIPanel()
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool IsUIPanel(GameObject go, List<string> components)
         {
             throw new NotImplementedException();
         }
