@@ -192,12 +192,13 @@ namespace Poco
                     case "scale":
                         return floatOneOne;
                     case "anchorPoint":
-                        {
-                            float[] floatArr = ArrPool_float.Ins.GetObj();
-                            floatArr[0] = gObject.pivotX;
-                            floatArr[1] = gObject.pivotY;
-                            return floatArr;
-                        }
+                        return floatZeroZero;
+                        //{
+                        //    float[] floatArr = ArrPool_float.Ins.GetObj();
+                        //    floatArr[0] = gObject.pivotX;
+                        //    floatArr[1] = gObject.pivotY;
+                        //    return floatArr;
+                        //}
                     case "zOrders":
                         return GameObjectzOrders();
                     case "clickable":
