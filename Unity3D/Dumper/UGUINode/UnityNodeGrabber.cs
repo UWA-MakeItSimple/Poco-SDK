@@ -375,18 +375,11 @@ namespace Poco
 
         private string GameObjectText()
         {
-            if(components.Contains("Text"))
-            {
-                Text text = gameObject.GetComponent<Text>();
-                return text ? text.text : null;
-            }
-            else
-            {
-                return null;
-            }
-
-
+            Text text = gameObject.GetComponent<Text>();
+            return text ? text.text : null;
         }
+
+
 
         private string GameObjectTag()
         {

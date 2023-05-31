@@ -320,13 +320,9 @@ namespace Poco
 
         private string GameObjectText()
         {
-            if (components.Contains("UILabel"))
-            {
-                UILabel text = gameObject.GetComponent<UILabel>();
-                return text ? text.text : null;
-            }
+			UILabel text = gameObject.GetComponent<UILabel>();
+			return text ? text.text : null;
 
-            return null;
         }
 
         private string GameObjectTag()
