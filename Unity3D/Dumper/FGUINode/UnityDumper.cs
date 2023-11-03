@@ -81,12 +81,31 @@ namespace Poco
             //    doInfo = go.GetComponent<DisplayObjectInfo>();
             //}
 
-            foreach (var c in componetsArr)
+            // Iterate through all components to find specific types.
+            foreach (var component in componentsArr)
             {
-                doInfo = c as DisplayObjectInfo;
-                uipanelComp = c as UIPanel;
-                renderer = c as Renderer;
+                if (doInfo == null)
+                {
+                    doInfo = component as DisplayObjectInfo;
+                }
+
+                if (uipanelComp == null)
+                {
+                    uipanelComp = component as UIPanel;
+                }
+
+                if (renderer == null)
+                {
+                    renderer = component as Renderer;
+                }
+
+                // If all desired components have been found, no need to continue iterating.
+                if (doInfo != null && uipanelComp != null && renderer != null)
+                {
+                    break;
+                }
             }
+
             string name = UnityNodeGrabber.Instance.GetName(go, doInfo);
 
             //if (components.Contains("UIPanel"))
