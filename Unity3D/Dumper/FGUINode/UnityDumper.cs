@@ -68,9 +68,9 @@ namespace Poco
             bool protectChildren = false;
 
 
-            Component[] componetsArr = null;
+            Component[] componentsArr = null;
             //由于IsVisible一定要获取，而通过GetAllComponents来得到IsVisible又是最优的，所以将components也作为必须获取的项。
-            List<string> components = UnityNodeGrabber.Instance.GameObjectAllComponents(go, out componetsArr);
+            List<string> components = UnityNodeGrabber.Instance.GameObjectAllComponents(go, out componentsArr);
             
             Renderer renderer = null;
             DisplayObjectInfo doInfo = null;
